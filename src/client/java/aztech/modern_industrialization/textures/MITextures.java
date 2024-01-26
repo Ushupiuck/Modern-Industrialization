@@ -23,9 +23,11 @@
  */
 package aztech.modern_industrialization.textures;
 
+import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.MIFluids;
-import aztech.modern_industrialization.ModernIndustrialization;
 import aztech.modern_industrialization.definition.FluidDefinition;
+import aztech.modern_industrialization.machines.models.MachineCasing;
+import aztech.modern_industrialization.machines.models.MachineCasings;
 import aztech.modern_industrialization.materials.Material;
 import aztech.modern_industrialization.materials.MaterialRegistry;
 import aztech.modern_industrialization.materials.part.MaterialItemPart;
@@ -41,13 +43,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import net.minecraft.Util;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceProvider;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;
 
 public final class MITextures {
 
     public static CompletableFuture<?> offerTextures(BiConsumer<NativeImage, String> textureWriter, BiConsumer<JsonElement, String> mcMetaWriter,
-            ResourceProvider manager) {
+            ResourceProvider manager, ExistingFileHelper fileHelper) {
         TextureManager mtm = new TextureManager(manager, textureWriter, mcMetaWriter);
 
         // Texture generation runs in two phases:
@@ -63,7 +67,7 @@ public final class MITextures {
             var meanRgb = material.get(MaterialProperty.MEAN_RGB);
 
             if (meanRgb == 0) {
-                ModernIndustrialization.LOGGER.error("Missing mean RGB for material {}", material.name);
+                MI.LOGGER.error("Missing mean RGB for material {}", material.name);
                 continue;
             }
 
@@ -74,32 +78,14 @@ public final class MITextures {
             }
         }
 
-        for (FluidDefinition fluid : MIFluids.FLUIDS.values()) {
+        for (FluidDefinition fluid : MIFluids.FLUID_DEFINITIONS.values()) {
             defer.accept(() -> registerFluidTextures(mtm, fluid));
         }
 
-        mtm.runAtEnd(() -> casingFromTexture(mtm, "lv", mtm.getAssetAsTexture("modern_industrialization:textures/block/basic_machine_hull.png")));
-        mtm.runAtEnd(() -> casingFromTexture(mtm, "mv", mtm.getAssetAsTexture("modern_industrialization:textures/block/advanced_machine_hull.png")));
-        mtm.runAtEnd(() -> casingFromTexture(mtm, "hv", mtm.getAssetAsTexture("modern_industrialization:textures/block/turbo_machine_hull.png")));
-        mtm.runAtEnd(() -> casingFromTexture(mtm, "ev",
-                mtm.getAssetAsTexture("modern_industrialization:textures/block/highly_advanced_machine_hull.png")));
-        mtm.runAtEnd(() -> casingFromTexture(mtm, "superconductor",
-                mtm.getAssetAsTexture("modern_industrialization:textures/block/quantum_machine_hull.png")));
-        mtm.runAtEnd(
-                () -> casingFromTexture(mtm, "nuclear", mtm.getAssetAsTexture("modern_industrialization:textures/block/nuclear_machine_casing.png")));
-
-        mtm.runAtEnd(
-                () -> casingFromTexture(mtm, "firebricks", mtm.getAssetAsTexture("modern_industrialization:textures/block/fire_clay_bricks.png")));
-
-        mtm.runAtEnd(() -> casingFromTexture(mtm, "bricks", mtm.getAssetAsTexture("minecraft:textures/block/bricks.png")));
-
-        mtm.runAtEnd(() -> casingFromTextureBricked(mtm, "bricked_bronze",
-                mtm.getAssetAsTexture("modern_industrialization:textures/block/bronze_machine_casing.png"),
-                mtm.getAssetAsTexture("modern_industrialization:textures/block/fire_clay_bricks.png")));
-
-        mtm.runAtEnd(() -> casingFromTextureBricked(mtm, "bricked_steel",
-                mtm.getAssetAsTexture("modern_industrialization:textures/block/steel_machine_casing.png"),
-                mtm.getAssetAsTexture("modern_industrialization:textures/block/fire_clay_bricks.png")));
+        mtm.runAtEnd(() -> casingFromTextureBricked(mtm, MachineCasings.BRICKED_BRONZE,
+                MI.id("textures/block/bronze_machine_casing.png")));
+        mtm.runAtEnd(() -> casingFromTextureBricked(mtm, MachineCasings.BRICKED_STEEL,
+                MI.id("textures/block/steel_machine_casing.png")));
 
         mtm.runAtEnd(() -> mtm.addTexture("modern_industrialization:textures/item/mixed_ingot_blastproof.png",
                 TextureHelper.tripleTexture(mtm.getAssetAsTexture("modern_industrialization:textures/item/stainless_steel_ingot.png"),
@@ -121,7 +107,10 @@ public final class MITextures {
                     // Do second phase work
                     return mtm.doEndWork();
                 }, Util.backgroundExecutor())
-                .thenRun(() -> ModernIndustrialization.LOGGER.info("I used the png to destroy the png."));
+                .thenRun(() -> {
+                    mtm.markTexturesAsGenerated(fileHelper);
+                })
+                .thenRun(() -> MI.LOGGER.info("I used the png to destroy the png."));
     }
 
     private static String getTemplate(String materialSet, String part, String suffix) {
@@ -166,7 +155,7 @@ public final class MITextures {
     }
 
     public static void logTextureGenerationError(Throwable throwable, String path, String materialSet, String part) {
-        ModernIndustrialization.LOGGER.warn(
+        MI.LOGGER.warn(
                 String.format("Failed to generate item part texture for path %s, material set %s, partTemplate %s", path, materialSet, part),
                 throwable);
     }
@@ -238,33 +227,25 @@ public final class MITextures {
         }
     }
 
-    public static void casingFromTextureBricked(TextureManager tm, String casing, NativeImage texture, NativeImage brick) {
-        for (String side : new String[] { "top", "side", "bottom" }) {
-            try {
-
-                NativeImage target;
-                if (side.equals("top")) {
-                    target = TextureHelper.copy(texture);
-                } else if (side.equals("bottom")) {
-                    target = TextureHelper.copy(brick);
-                } else {
-                    if (texture.getWidth() != brick.getWidth() || texture.getHeight() != brick.getHeight()) {
-                        throw new IllegalArgumentException("Texture and Brick must have same dimension");
-                    }
-                    NativeImage copy = TextureHelper.copy(texture);
-                    for (int i = 0; i < copy.getWidth(); ++i) {
-                        for (int j = copy.getHeight() / 2; j < copy.getHeight(); j++) {
-                            copy.setPixelRGBA(i, j, brick.getPixelRGBA(i, j));
-                        }
-                    }
-                    target = copy;
-                }
-                String s = String.format("modern_industrialization:textures/block/casings/%s/%s.png", casing, side);
-                tm.addTexture(s, target);
-
-            } catch (IOException e) {
-                e.printStackTrace();
+    public static void casingFromTextureBricked(TextureManager tm, MachineCasing casing, ResourceLocation topTexturePath) {
+        try (
+                var topTexture = tm.getAssetAsTexture(topTexturePath.toString());
+                var brickTexture = tm.getAssetAsTexture("modern_industrialization:textures/block/fire_clay_bricks.png")) {
+            if (topTexture.getWidth() != brickTexture.getWidth() || topTexture.getHeight() != brickTexture.getHeight()) {
+                throw new IllegalArgumentException("Texture and Brick must have same dimension");
             }
+            // Copy image
+            try (NativeImage copy = TextureHelper.copy(topTexture)) {
+                for (int i = 0; i < copy.getWidth(); ++i) {
+                    for (int j = copy.getHeight() / 2; j < copy.getHeight(); j++) {
+                        copy.setPixelRGBA(i, j, brickTexture.getPixelRGBA(i, j));
+                    }
+                }
+                String s = String.format("modern_industrialization:textures/block/casings/%s.png", casing.name);
+                tm.addTexture(s, copy);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to generate bricked casing texture", e);
         }
     }
 

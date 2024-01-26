@@ -25,10 +25,11 @@ package aztech.modern_industrialization.items;
 
 import aztech.modern_industrialization.blocks.storage.StorageBehaviour;
 import aztech.modern_industrialization.blocks.storage.barrel.BarrelTooltipData;
+import aztech.modern_industrialization.thirdparty.fabrictransfer.api.item.ItemVariant;
+import dev.technici4n.grandpower.api.ISimpleEnergyItem;
 import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
 import java.util.Optional;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
@@ -36,7 +37,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import team.reborn.energy.api.base.SimpleEnergyItem;
 
 public class PortableStorageUnit extends Item implements ItemContainingItemHelper {
 
@@ -121,7 +121,7 @@ public class PortableStorageUnit extends Item implements ItemContainingItemHelpe
      * @return The energy stored in the stack. Count is ignored.
      */
     public long getStoredEnergy(ItemStack stack) {
-        return SimpleEnergyItem.getStoredEnergyUnchecked(stack);
+        return ISimpleEnergyItem.getStoredEnergyUnchecked(stack);
     }
 
     /**
@@ -129,6 +129,6 @@ public class PortableStorageUnit extends Item implements ItemContainingItemHelpe
      * It's up to callers to ensure that the new amount is >= 0 and <= capacity.
      */
     public void setStoredEnergy(ItemStack stack, long newAmount) {
-        SimpleEnergyItem.setStoredEnergyUnchecked(stack, newAmount);
+        ISimpleEnergyItem.setStoredEnergyUnchecked(stack, newAmount);
     }
 }

@@ -29,7 +29,8 @@ import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
-import net.fabricmc.loader.api.FabricLoader;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 @Config(name = MIConfig.NAME)
 public class MIConfig implements ConfigData {
@@ -46,7 +47,7 @@ public class MIConfig implements ConfigData {
     @EnglishTranslation(value = "Disable display of Fuel EU in tooltips")
     public boolean disableFuelTooltips = false;
     @EnglishTranslation(value = "Disable display of Item Tag in tooltips")
-    public boolean disableItemTagTooltips = false;
+    public boolean disableItemTagTooltips = FMLEnvironment.production;
     @EnglishTranslation(value = "Display when a new version is available")
     public boolean newVersionMessage = true;
     @EnglishTranslation(value = "Show valid positions in multiblocks when holding a hatch")
@@ -57,7 +58,7 @@ public class MIConfig implements ConfigData {
     @EnglishTranslation(value = "Color Water and Lava (Restart needed)")
     public boolean colorWaterLava = true;
     @EnglishTranslation(value = "Enable UNSUPPORTED and DANGEROUS debug commands")
-    public boolean enableDebugCommands = false;
+    public boolean enableDebugCommands = !FMLEnvironment.production;
     @ConfigEntry.Gui.RequiresRestart
     @EnglishTranslation(value = "Enable bi-directional energy compatibility with Tech Reborn Energy. We recommend leaving this to false unless the other mods have been balanced accordingly. (Restart needed)")
     public boolean enableBidirectionalEnergyCompat = false;
@@ -81,20 +82,26 @@ public class MIConfig implements ConfigData {
     @ConfigEntry.Gui.RequiresRestart
     @EnglishTranslation(value = "Maximum height of the Distillation Tower multiblock (Restart needed)")
     public int maxDistillationTowerHeight = 9;
+    @EnglishTranslation(value = "Enable inter-machine connected textures. (Requires a suitable resource pack)")
+    public boolean enableInterMachineConnectedTextures = false;
 
     @ConfigEntry.Gui.Excluded
-    private transient static boolean registered = false;
+    private transient volatile static MIConfig instance = null;
 
     public static synchronized MIConfig getConfig() {
-        if (!registered) {
-            AutoConfig.register(MIConfig.class, Toml4jConfigSerializer::new);
-            registered = true;
+        MIConfig config = instance;
+        if (config == null) {
+            synchronized (MIConfig.class) {
+                config = instance;
+                if (config == null) {
+                    instance = config = AutoConfig.register(MIConfig.class, Toml4jConfigSerializer::new).getConfig();
+                }
+            }
         }
-
-        return AutoConfig.getConfigHolder(MIConfig.class).getConfig();
+        return config;
     }
 
     public static boolean loadAe2Compat() {
-        return getConfig().enableAe2Integration && FabricLoader.getInstance().isModLoaded("ae2");
+        return getConfig().enableAe2Integration && ModList.get().isLoaded("ae2");
     }
 }

@@ -1,10 +1,8 @@
 {
-  "fabric:load_conditions": [
+  "neoforge:conditions": [
     {
-      "condition": "fabric:all_mods_loaded",
-      "values": [
-        "ae2"
-      ]
+      "type": "neoforge:mod_loaded",
+      "modid": "ae2"
     }
   ],
   "type": "modern_industrialization:assembler",
@@ -12,7 +10,7 @@
   "eu": 8,
   "fluid_inputs": [
     {
-      "amount": 100,
+      "amount": 90,
       "fluid": "modern_industrialization:molten_redstone"
     }
   ],

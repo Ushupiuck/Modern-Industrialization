@@ -31,6 +31,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class OrientationComponent implements IComponent {
     public Direction facingDirection = Direction.NORTH;
@@ -38,15 +39,17 @@ public class OrientationComponent implements IComponent {
     public boolean extractItems = false;
     public boolean extractFluids = false;
     public final Params params;
+    private final BlockEntity machine;
 
-    public OrientationComponent(Params params) {
+    public OrientationComponent(Params params, BlockEntity machine) {
         this.params = params;
         if (params.hasOutput) {
             outputDirection = Direction.NORTH;
         }
+        this.machine = machine;
     }
 
-    public void readNbt(CompoundTag tag) {
+    public void readNbt(CompoundTag tag, boolean isUpgradingMachine) {
         facingDirection = Direction.from3DDataValue(tag.getInt("facingDirection"));
         if (params.hasOutput) {
             outputDirection = Direction.from3DDataValue(tag.getInt("outputDirection"));
@@ -80,6 +83,7 @@ public class OrientationComponent implements IComponent {
         if (player.isShiftKeyDown()) {
             if (params.hasOutput) {
                 outputDirection = face;
+                machine.invalidateCapabilities();
                 return true;
             }
         } else {

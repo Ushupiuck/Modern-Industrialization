@@ -3,11 +3,11 @@
   "eu" : 4,
   "duration" : 300,
   "item_inputs" : {
-    "tag" : "c:soldering_alloy_dusts",
+    "tag" : "forge:dusts/soldering_alloy",
     "amount" : 1
   },
   "fluid_outputs" : {
     "fluid" : "modern_industrialization:soldering_alloy",
-    "amount" : 111.11
+    "amount" : 90
   }
 }

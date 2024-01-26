@@ -24,24 +24,18 @@
 package aztech.modern_industrialization.items.diesel_tools;
 
 import aztech.modern_industrialization.MIText;
-import aztech.modern_industrialization.api.FluidFuelRegistry;
+import aztech.modern_industrialization.api.datamaps.FluidFuel;
 import aztech.modern_industrialization.fluid.MIFluid;
-import aztech.modern_industrialization.items.DynamicEnchantmentItem;
 import aztech.modern_industrialization.items.DynamicToolItem;
 import aztech.modern_industrialization.items.FluidFuelItemHelper;
 import aztech.modern_industrialization.items.ItemHelper;
+import aztech.modern_industrialization.thirdparty.fabrictransfer.api.fluid.FluidVariant;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Reference2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import net.fabricmc.fabric.api.mininglevel.v1.MiningLevelManager;
-import net.fabricmc.fabric.api.tag.convention.v1.ConventionalItemTags;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -67,9 +61,12 @@ import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.TierSortingRegistry;
+import net.neoforged.neoforge.fluids.FluidType;
 
-public class DieselToolItem extends Item implements Vanishable, DynamicEnchantmentItem, DynamicToolItem {
-    public static final int CAPACITY = 4 * 81000;
+public class DieselToolItem extends Item implements Vanishable, DynamicToolItem {
+    public static final int CAPACITY = 4 * FluidType.BUCKET_VOLUME;
     private final double damage;
 
     public DieselToolItem(Properties settings, double damage) {
@@ -97,9 +94,12 @@ public class DieselToolItem extends Item implements Vanishable, DynamicEnchantme
     }
 
     @Override
-    public boolean isSuitableFor(ItemStack stack, BlockState state) {
-        int requiredLevel = MiningLevelManager.getRequiredMiningLevel(state);
-        return requiredLevel <= 4 && FluidFuelItemHelper.getAmount(stack) > 0 && isSupportedBlock(stack, state);
+    public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
+        if (isSupportedBlock(stack, state) && FluidFuelItemHelper.getAmount(stack) > 0
+                && TierSortingRegistry.isCorrectTierForDrops(Tiers.NETHERITE, state)) {
+            return true;
+        }
+        return super.isCorrectToolForDrops(stack, state);
     }
 
     @Override
@@ -114,7 +114,7 @@ public class DieselToolItem extends Item implements Vanishable, DynamicEnchantme
         long amount = FluidFuelItemHelper.getAmount(stack);
         if (amount > 0) {
             FluidVariant fluid = FluidFuelItemHelper.getFluid(stack);
-            int burnTicks = FluidFuelRegistry.getEu(fluid.getFluid());
+            int burnTicks = FluidFuel.getEu(fluid.getFluid());
             if (burnTicks > 0) {
                 return 1.0f + burnTicks / 8.0f;
             }
@@ -123,9 +123,9 @@ public class DieselToolItem extends Item implements Vanishable, DynamicEnchantme
     }
 
     @Override
-    public Multimap<Attribute, AttributeModifier> getAttributeModifiers(ItemStack stack, EquipmentSlot slot) {
+    public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
         if (slot == EquipmentSlot.MAINHAND && FluidFuelItemHelper.getAmount(stack) > 0) {
-            return ItemHelper.createToolModifiers(damage * FluidFuelRegistry.getEu(FluidFuelItemHelper.getFluid(stack).getFluid()) / 600);
+            return ItemHelper.createToolModifiers(damage * FluidFuel.getEu(FluidFuelItemHelper.getFluid(stack).getFluid()) / 600);
         }
         return ImmutableMultimap.of();
     }
@@ -133,6 +133,10 @@ public class DieselToolItem extends Item implements Vanishable, DynamicEnchantme
     @Override
     public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag context) {
         FluidFuelItemHelper.appendTooltip(stack, tooltip, CAPACITY);
+
+        for (var entry : getAllEnchantments(stack).entrySet()) {
+            tooltip.add(entry.getKey().getFullname(entry.getValue()));
+        }
     }
 
     @Override
@@ -189,6 +193,8 @@ public class DieselToolItem extends Item implements Vanishable, DynamicEnchantme
         return super.use(world, user, hand);
     }
 
+    // TODO NEO override canPerformAction
+
     @Override
     public InteractionResult useOn(UseOnContext context) {
         ItemStack stack = context.getItemInHand();
@@ -220,22 +226,23 @@ public class DieselToolItem extends Item implements Vanishable, DynamicEnchantme
                 }
             }
             if (stack.is(ItemTags.HOES)) {
-                Pair<Predicate<UseOnContext>, Consumer<UseOnContext>> pair = HoeItem.TILLABLES.get(state.getBlock());
-                if (pair != null) {
-                    Predicate<UseOnContext> predicate = pair.getFirst();
-                    Consumer<UseOnContext> consumer = pair.getSecond();
-                    if (predicate.test(context)) {
-                        w.playSound(player, pos, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1.0F, 1.0F);
-                        if (!w.isClientSide) {
-                            consumer.accept(context);
-                            if (player != null) {
-                                FluidFuelItemHelper.decrement(stack);
-                            }
-                        }
-
-                        return InteractionResult.sidedSuccess(w.isClientSide);
-                    }
-                }
+                // TODO NEO: restore tilling
+//                Pair<Predicate<UseOnContext>, Consumer<UseOnContext>> pair = HoeItem.TILLABLES.get(state.getBlock());
+//                if (pair != null) {
+//                    Predicate<UseOnContext> predicate = pair.getFirst();
+//                    Consumer<UseOnContext> consumer = pair.getSecond();
+//                    if (predicate.test(context)) {
+//                        w.playSound(player, pos, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1.0F, 1.0F);
+//                        if (!w.isClientSide) {
+//                            consumer.accept(context);
+//                            if (player != null) {
+//                                FluidFuelItemHelper.decrement(stack);
+//                            }
+//                        }
+//
+//                        return InteractionResult.sidedSuccess(w.isClientSide);
+//                    }
+//                }
             }
 
         }
@@ -243,7 +250,12 @@ public class DieselToolItem extends Item implements Vanishable, DynamicEnchantme
     }
 
     @Override
-    public Reference2IntMap<Enchantment> getEnchantments(ItemStack stack) {
+    public int getEnchantmentLevel(ItemStack stack, Enchantment enchantment) {
+        return getAllEnchantments(stack).getOrDefault(enchantment, 0);
+    }
+
+    @Override
+    public Map<Enchantment, Integer> getAllEnchantments(ItemStack stack) {
         Reference2IntMap<Enchantment> map = new Reference2IntArrayMap<>();
         if (FluidFuelItemHelper.getAmount(stack) > 0) {
             if (!isFortune(stack)) {
@@ -253,6 +265,11 @@ public class DieselToolItem extends Item implements Vanishable, DynamicEnchantme
             }
         }
         return map;
+    }
+
+    @Override
+    public boolean isFoil(ItemStack pStack) {
+        return !getAllEnchantments(pStack).isEmpty();
     }
 
     private static class StrippingAccess extends AxeItem {
@@ -282,7 +299,7 @@ public class DieselToolItem extends Item implements Vanishable, DynamicEnchantme
         int costMb = (int) (defaultMb / speedMultiplier);
 
         if (FluidFuelItemHelper.getAmount(stack) >= costMb) {
-            if (stack.is(ConventionalItemTags.SHEARS) && interactionTarget instanceof Shearable shearable) {
+            if (stack.is(Tags.Items.SHEARS) && interactionTarget instanceof Shearable shearable) {
                 if (!interactionTarget.level().isClientSide && shearable.readyForShearing()) {
                     shearable.shear(SoundSource.PLAYERS);
                     interactionTarget.gameEvent(GameEvent.SHEAR, player);

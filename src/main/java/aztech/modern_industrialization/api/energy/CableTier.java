@@ -27,17 +27,18 @@ import aztech.modern_industrialization.MIBlockKeys;
 import aztech.modern_industrialization.compat.kubejs.KubeJSProxy;
 import aztech.modern_industrialization.machines.models.MachineCasing;
 import aztech.modern_industrialization.machines.models.MachineCasings;
+import aztech.modern_industrialization.thirdparty.fabrictransfer.api.storage.StoragePreconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import net.fabricmc.fabric.api.transfer.v1.storage.StoragePreconditions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -70,8 +71,10 @@ public final class CableTier implements Comparable<CableTier> {
     /**
      * The {@link MachineCasing} that uses this cable tier.
      */
+    @ApiStatus.Internal
     public final MachineCasing casing;
 
+    @ApiStatus.Internal
     public CableTier(String name, String shortEnglishName, String longEnglishName, long eu, ResourceLocation itemKey, boolean builtin) {
         StoragePreconditions.notNegative(eu);
 
@@ -135,6 +138,7 @@ public final class CableTier implements Comparable<CableTier> {
      *
      * @param tier The new tier instance to register.
      */
+    @ApiStatus.Internal
     public static void addTier(CableTier tier) {
         for (var existingTier : tiers.values()) {
             if (existingTier.name.equals(tier.name)) {

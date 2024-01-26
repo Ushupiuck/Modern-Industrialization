@@ -23,15 +23,16 @@
  */
 package aztech.modern_industrialization.compat.ftbteams;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import net.fabricmc.loader.api.FabricLoader;
+import net.neoforged.fml.ModList;
 
 public interface FTBTeamsFacade {
     FTBTeamsFacade INSTANCE = getInstance();
 
     private static FTBTeamsFacade getInstance() {
-        if (FabricLoader.getInstance().isModLoaded("ftbteams")) {
+        if (ModList.get().isLoaded("ftbteams")) {
             try {
                 return Class.forName("aztech.modern_industrialization.compat.ftbteams.FTBTeamsFacadeImpl")
                         .asSubclass(FTBTeamsFacade.class).getConstructor().newInstance();
@@ -43,5 +44,5 @@ public interface FTBTeamsFacade {
         return uuid -> List.of();
     }
 
-    Iterable<UUID> getOtherPlayersInTeam(UUID playerUuid);
+    Collection<UUID> getOtherPlayersInTeam(UUID playerUuid);
 }

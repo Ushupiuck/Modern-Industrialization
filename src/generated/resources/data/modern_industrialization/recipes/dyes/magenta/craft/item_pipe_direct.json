@@ -1,14 +1,15 @@
 {
   "type": "minecraft:crafting_shaped",
+  "category": "misc",
   "key": {
     "C": {
       "item": "modern_industrialization:bronze_curved_plate"
     },
     "G": {
-      "tag": "c:steel_gears"
+      "tag": "forge:gears/steel"
     },
     "d": {
-      "tag": "c:magenta_dyes"
+      "tag": "forge:dyes/magenta"
     }
   },
   "pattern": [

@@ -4,13 +4,7 @@
   "package": "aztech.modern_industrialization.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "runtime_resources.MinecraftServerMixin",
-    "runtime_resources.MultiPackResourceManagerMixin",
-    "runtime_resources.PackConfigMixin",
-    "runtime_resources.ReloadableResourceManagerMixin",
-    "ItemStackMixin",
-    "InventoryMixin",
-    "WorldChunkMixin"
+    "BlockStateBaseMixin"
   ],
   "injectors": {
     "defaultRequire": 1

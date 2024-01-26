@@ -59,7 +59,7 @@ public class TemperatureComponent implements IComponent {
     }
 
     @Override
-    public void readNbt(CompoundTag tag) {
+    public void readNbt(CompoundTag tag, boolean isUpgradingMachine) {
         setTemperature(tag.getDouble("temperature"));
     }
 }

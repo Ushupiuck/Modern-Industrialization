@@ -16,12 +16,18 @@ jobs:
           java-version: 17
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Generate assets
-        run: ./gradlew runData --no-daemon
       - name: Build with Gradle
         env:
           MI_VERSION: ${{ github.event.release.tag_name }}
         run: ./gradlew build
+      - name: Publish to ModMaven
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishAllPublicationsToModmavenRepository
+        env:
+          MI_VERSION: ${{ github.event.release.tag_name }}
+          MODMAVEN_USER: ${{ secrets.MODMAVEN_USER }}
+          MODMAVEN_PASSWORD: ${{ secrets.MODMAVEN_PASSWORD }}
       - name: Upload to Curseforge
         env:
           MI_VERSION: ${{ github.event.release.tag_name }}

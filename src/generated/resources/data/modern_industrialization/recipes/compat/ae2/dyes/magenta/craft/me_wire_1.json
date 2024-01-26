@@ -1,13 +1,14 @@
 {
-  "fabric:load_conditions": [
+  "neoforge:conditions": [
     {
-      "condition": "modern_industrialization:ae_compat_loaded"
+      "type": "modern_industrialization:ae_compat_loaded"
     }
   ],
   "type": "minecraft:crafting_shaped",
+  "category": "misc",
   "key": {
     "d": {
-      "tag": "c:magenta_dyes"
+      "tag": "forge:dyes/magenta"
     },
     "p": {
       "tag": "modern_industrialization:me_wires"
@@ -17,7 +18,6 @@
     "pd"
   ],
   "result": {
-    "count": 1,
     "item": "modern_industrialization:magenta_me_wire"
   }
 }

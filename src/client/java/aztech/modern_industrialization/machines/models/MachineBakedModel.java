@@ -23,17 +23,14 @@
  */
 package aztech.modern_industrialization.machines.models;
 
-import java.util.Collections;
+import aztech.modern_industrialization.MI;
+import aztech.modern_industrialization.util.ModelHelper;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
-import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
-import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
-import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
-import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
-import net.fabricmc.fabric.api.renderer.v1.model.ModelHelper;
-import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
-import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
+import java.util.Objects;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -41,73 +38,48 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.model.IDynamicBakedModel;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class MachineBakedModel implements BakedModel, FabricBakedModel {
-    private static final Direction[] DIRECTIONS = Direction.values();
+public class MachineBakedModel implements IDynamicBakedModel {
+    public static float Z_OFFSET = 5e-4f; // Cannot be lower due to Embeddium compact vertex format
 
-    public final RenderMaterial cutoutMaterial;
+    private static final ChunkRenderTypeSet CUTOUT_MIPPED = ChunkRenderTypeSet.of(RenderType.cutoutMipped());
+
+    public static final String CASING_FOLDER = "machine_casing";
+
+    public static ResourceLocation getCasingModelId(MachineCasing casing) {
+        return MI.id(CASING_FOLDER + "/" + casing.name);
+    }
+
+    public static BakedModel getCasingModel(MachineCasing casing) {
+        return Minecraft.getInstance().getModelManager().getModel(getCasingModelId(casing));
+    }
+
     private final MachineCasing baseCasing;
     private final TextureAtlasSprite[] defaultOverlays;
     private final Map<String, TextureAtlasSprite[]> tieredOverlays;
+    private final MachineModelClientData defaultData;
 
-    MachineBakedModel(RenderMaterial cutoutMaterial, MachineCasing baseCasing,
+    MachineBakedModel(MachineCasing baseCasing,
             TextureAtlasSprite[] defaultOverlays,
             Map<String, TextureAtlasSprite[]> tieredOverlays) {
-        this.cutoutMaterial = cutoutMaterial;
         this.baseCasing = baseCasing;
         this.defaultOverlays = defaultOverlays;
         this.tieredOverlays = tieredOverlays;
+        this.defaultData = new MachineModelClientData(baseCasing, Direction.NORTH);
     }
 
-    @Override
-    public boolean isVanillaAdapter() {
-        return false;
-    }
-
-    @Override
-    public void emitBlockQuads(BlockAndTintGetter blockRenderView, BlockState blockState, BlockPos blockPos, Supplier<RandomSource> supplier,
-            RenderContext renderContext) {
-        if (blockRenderView instanceof RenderAttachedBlockView bv) {
-            Object attachment = bv.getBlockEntityRenderAttachment(blockPos);
-            if (attachment instanceof MachineModelClientData clientData) {
-                MachineCasing casing = clientData.casing == null ? baseCasing : clientData.casing;
-                var sprites = renderBase(renderContext, casing, clientData.frontDirection);
-                if (clientData.outputDirection != null) {
-                    emitSprite(renderContext.getEmitter(), clientData.outputDirection, sprites[24], 3e-4f);
-                    if (clientData.itemAutoExtract) {
-                        emitSprite(renderContext.getEmitter(), clientData.outputDirection, sprites[25], 3e-4f);
-                    }
-                    if (clientData.fluidAutoExtract) {
-                        emitSprite(renderContext.getEmitter(), clientData.outputDirection, sprites[26], 3e-4f);
-                    }
-                }
-            }
-        }
-    }
-
-    @Override
-    public void emitItemQuads(ItemStack itemStack, Supplier<RandomSource> supplier, RenderContext renderContext) {
-        renderBase(renderContext, baseCasing, Direction.NORTH);
-    }
-
-    private TextureAtlasSprite[] renderBase(RenderContext renderContext, MachineCasing casing, Direction facingDirection) {
-        // Casing
-        MachineCasingModel.get(casing).getMesh().outputTo(renderContext.getEmitter());
-        // Machine overlays
-        var sprites = getSprites(casing);
-        QuadEmitter emitter = renderContext.getEmitter();
-        for (Direction d : DIRECTIONS) {
-            TextureAtlasSprite sprite = getSprite(sprites, d, facingDirection, false);
-            if (sprite != null) {
-                emitSprite(emitter, d, sprite, 1e-6f);
-            }
-        }
-        return sprites;
+    public MachineCasing getBaseCasing() {
+        return baseCasing;
     }
 
     public TextureAtlasSprite[] getSprites(@Nullable MachineCasing casing) {
@@ -138,20 +110,53 @@ public class MachineBakedModel implements BakedModel, FabricBakedModel {
         return sprites[spriteId];
     }
 
-    private void emitSprite(QuadEmitter emitter, Direction d, TextureAtlasSprite sprite, float depth) {
-        if (sprite != null) {
-            emitter.material(cutoutMaterial);
-            emitter.square(d, 0, 0, 1, 1, -depth);
-            emitter.cullFace(d);
-            emitter.spriteBake(sprite, MutableQuadView.BAKE_LOCK_UV);
-            emitter.color(-1, -1, -1, -1);
-            emitter.emit();
+    @Override
+    public ModelData getModelData(BlockAndTintGetter level, BlockPos pos, BlockState state, ModelData modelData) {
+        var machineData = modelData.get(MachineModelClientData.KEY);
+        if (machineData == null) {
+            return modelData;
         }
+
+        MachineCasing casing = Objects.requireNonNullElse(machineData.casing, baseCasing);
+        return getCasingModel(casing).getModelData(level, pos, state, modelData);
     }
 
     @Override
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction face, RandomSource random) {
-        return Collections.emptyList();
+    public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand,
+            @NotNull ModelData extraData, @Nullable RenderType renderType) {
+        var data = extraData.get(MachineModelClientData.KEY);
+        if (data == null) {
+            data = defaultData;
+        }
+
+        MachineCasing casing = Objects.requireNonNullElse(data.casing, baseCasing);
+        var sprites = getSprites(casing);
+
+        List<BakedQuad> quads = new ArrayList<>();
+        var vc = new QuadBakingVertexConsumer(quads::add);
+
+        if (side != null) {
+            // Casing
+            quads.addAll(getCasingModel(casing).getQuads(state, side, rand, extraData, renderType));
+            // Machine overlays
+            TextureAtlasSprite sprite = getSprite(sprites, side, data.frontDirection, false);
+            if (sprite != null) {
+                ModelHelper.emitSprite(vc, side, sprite, -Z_OFFSET);
+            }
+        }
+
+        // Output overlays
+        if (data.outputDirection != null && side == data.outputDirection) {
+            ModelHelper.emitSprite(vc, data.outputDirection, sprites[24], -3 * Z_OFFSET);
+            if (data.itemAutoExtract) {
+                ModelHelper.emitSprite(vc, data.outputDirection, sprites[25], -3 * Z_OFFSET);
+            }
+            if (data.fluidAutoExtract) {
+                ModelHelper.emitSprite(vc, data.outputDirection, sprites[26], -3 * Z_OFFSET);
+            }
+        }
+
+        return quads;
     }
 
     @Override
@@ -176,7 +181,7 @@ public class MachineBakedModel implements BakedModel, FabricBakedModel {
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
-        return MachineCasingModel.get(baseCasing).getSideSprite();
+        return getCasingModel(baseCasing).getParticleIcon();
     }
 
     @Override
@@ -187,5 +192,10 @@ public class MachineBakedModel implements BakedModel, FabricBakedModel {
     @Override
     public ItemOverrides getOverrides() {
         return ItemOverrides.EMPTY;
+    }
+
+    @Override
+    public ChunkRenderTypeSet getRenderTypes(@NotNull BlockState state, @NotNull RandomSource rand, @NotNull ModelData data) {
+        return CUTOUT_MIPPED;
     }
 }

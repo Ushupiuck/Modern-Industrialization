@@ -5,11 +5,11 @@
   "item_inputs": [
     {
       "amount": 1,
-      "tag": "c:wooden_barrels"
+      "tag": "forge:barrels/wooden"
     },
     {
       "amount": 8,
-      "tag": "c:steel_plates"
+      "tag": "forge:plates/steel"
     }
   ],
   "item_outputs": [

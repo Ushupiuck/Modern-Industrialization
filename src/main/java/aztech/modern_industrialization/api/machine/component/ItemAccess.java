@@ -23,11 +23,13 @@
  */
 package aztech.modern_industrialization.api.machine.component;
 
+import aztech.modern_industrialization.thirdparty.fabrictransfer.api.item.ItemVariant;
 import com.google.common.primitives.Ints;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 
 public interface ItemAccess {
+    @ApiStatus.Internal // Don't rely on these types existing forever!
     ItemVariant getVariant();
 
     long getAmount();

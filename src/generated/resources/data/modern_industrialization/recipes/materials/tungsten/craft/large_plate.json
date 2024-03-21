@@ -1,9 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "x": {
-      "tag": "forge:plates/tungsten"
+      "tag": "c:tungsten_plates"
     }
   },
   "pattern": [
@@ -11,6 +10,7 @@
     "xx"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:tungsten_large_plate"
   }
 }

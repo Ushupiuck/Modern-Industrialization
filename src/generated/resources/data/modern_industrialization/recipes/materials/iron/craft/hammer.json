@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "p": {
       "item": "modern_industrialization:iron_large_plate"
@@ -15,6 +14,7 @@
     " s "
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:iron_hammer"
   }
 }

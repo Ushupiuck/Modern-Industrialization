@@ -4,15 +4,15 @@
   "duration" : 200,
   "item_inputs" : [
     {
-      "tag" : "forge:ingots/tungsten",
+      "tag" : "c:tungsten_ingots",
       "amount" : 1
     },
     {
-      "tag" : "forge:ingots/titanium",
+      "tag" : "c:titanium_ingots",
       "amount" : 1
     },
     {
-      "tag" : "forge:ingots/stainless_steel",
+      "tag" : "c:stainless_steel_ingots",
       "amount" : 1
     }
   ],

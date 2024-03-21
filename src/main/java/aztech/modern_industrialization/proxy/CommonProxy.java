@@ -26,26 +26,25 @@ package aztech.modern_industrialization.proxy;
 import aztech.modern_industrialization.blocks.storage.barrel.BarrelBlockEntity;
 import aztech.modern_industrialization.blocks.storage.tank.AbstractTankBlockEntity;
 import aztech.modern_industrialization.machines.gui.MachineMenuCommon;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.fluid.FluidVariant;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.fluid.FluidVariantAttributes;
+import aztech.modern_industrialization.util.UnsidedPacketHandler;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import net.minecraft.core.BlockPos;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
-import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -55,7 +54,7 @@ public class CommonProxy {
     public static CommonProxy INSTANCE = instantiateProxy();
 
     private static CommonProxy instantiateProxy() {
-        if (FMLEnvironment.dist.isClient()) {
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             try {
                 Class<?> clientProxy = Class.forName("aztech.modern_industrialization.proxy.ClientProxy");
                 return (CommonProxy) clientProxy.getConstructor().newInstance();
@@ -67,15 +66,15 @@ public class CommonProxy {
         }
     }
 
-    private static MinecraftServer currentServer = null; // note: will be null in multiplayer client
+    private static MinecraftServer currentServer = null;
 
     public static void initEvents() {
-        NeoForge.EVENT_BUS.addListener(ServerAboutToStartEvent.class, e -> currentServer = e.getServer());
-        NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, e -> currentServer = null);
+        ServerLifecycleEvents.SERVER_STARTED.register(s -> currentServer = s);
+        ServerLifecycleEvents.SERVER_STOPPED.register(s -> currentServer = null);
     }
 
-    public Player getClientPlayer() {
-        throw new UnsupportedOperationException("Client player is not available on the server!");
+    public static MinecraftServer getCurrentServer() {
+        return currentServer;
     }
 
     /**
@@ -93,35 +92,34 @@ public class CommonProxy {
         return null;
     }
 
-    public boolean shouldSteamDrillForceBreakReset() {
-        return false;
+    public void delayNextBlockAttack(Player player) {
     }
 
     public boolean hasShiftDown() {
         return false;
     }
 
-    // In case there is ever a client-side specific version of this...
     public List<Component> getFluidTooltip(FluidVariant variant) {
         List<Component> list = new ArrayList<>();
         list.add(FluidVariantAttributes.getName(variant));
         return list;
     }
 
-    public void withStandardItemRenderer(Consumer<?> stupidClientProperties) {
+    public void registerUnsidedPacket(ResourceLocation identifier, UnsidedPacketHandler handler) {
+        ServerPlayNetworking.registerGlobalReceiver(identifier, (server, player, listener, buf, responseSender) -> {
+            server.execute(handler.handlePacket(player, buf));
+        });
     }
 
-    public void registerPartTankClient(Supplier<BlockEntityType<AbstractTankBlockEntity>> blockEntityType, int meanRgb) {
+    public void registerPartTankClient(Block tankBlock, Item tankItem, String materialName, String itemPath,
+            BlockEntityType<AbstractTankBlockEntity> blockEntityType, int meanRgb) {
     }
 
-    public void registerPartBarrelClient(Supplier<BlockEntityType<BarrelBlockEntity>> blockEntityType, int meanRgb) {
+    public void registerPartBarrelClient(Block barrelBlock, Item barrelItem, String materialName, String itemPath,
+            BlockEntityType<BarrelBlockEntity> blockEntityType, int meanRgb) {
     }
 
     public MachineMenuCommon createClientMachineMenu(int syncId, Inventory playerInventory, FriendlyByteBuf buf) {
         throw new UnsupportedOperationException("Only supported on the server");
-    }
-
-    public BlockState getMachineCasingBlockState(BlockState state, BlockAndTintGetter renderView, BlockPos pos) {
-        return state;
     }
 }

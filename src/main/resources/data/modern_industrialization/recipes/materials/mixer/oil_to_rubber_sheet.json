@@ -8,7 +8,7 @@
   },
   "fluid_inputs": {
     "fluid": "modern_industrialization:synthetic_oil",
-    "amount": 100
+    "amount": 111.11
   },
   "item_outputs": {
     "item": "modern_industrialization:rubber_sheet",

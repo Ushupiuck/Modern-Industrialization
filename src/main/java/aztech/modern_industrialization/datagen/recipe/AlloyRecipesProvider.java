@@ -24,20 +24,21 @@
 package aztech.modern_industrialization.datagen.recipe;
 
 import aztech.modern_industrialization.machines.init.MIMachineRecipeTypes;
-import aztech.modern_industrialization.machines.recipe.MachineRecipeBuilder;
+import aztech.modern_industrialization.recipe.json.ShapelessRecipeJson;
 import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.RecipeOutput;
+import java.util.function.Consumer;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.minecraft.data.recipes.FinishedRecipe;
 
 public class AlloyRecipesProvider extends MIRecipesProvider {
-    public AlloyRecipesProvider(PackOutput packOutput) {
+    public AlloyRecipesProvider(FabricDataOutput packOutput) {
         super(packOutput);
     }
 
     @Override
-    public void buildRecipes(RecipeOutput consumer) {
+    public void buildRecipes(Consumer<FinishedRecipe> consumer) {
         new AlloyBuilder("bronze").addIngredient("tin", 1).addIngredient("copper", 3).Build(consumer);
         new AlloyBuilder("battery_alloy").addIngredient("lead", 1).addIngredient("antimony", 1).Build(consumer);
         new AlloyBuilder("cupronickel").addIngredient("copper", 1).addIngredient("nickel", 1).Build(consumer);
@@ -87,21 +88,25 @@ public class AlloyRecipesProvider extends MIRecipesProvider {
             return this;
         }
 
-        public void Build(RecipeOutput consumer) {
-            MachineRecipeBuilder dusts = new MachineRecipeBuilder(MIMachineRecipeTypes.MIXER, 2, 100);
-            dusts.addItemOutput("modern_industrialization:" + output + "_dust", totalAmount);
-
-            MachineRecipeBuilder tinyDusts = new MachineRecipeBuilder(MIMachineRecipeTypes.MIXER, 2, 100);
-            tinyDusts.addItemOutput("modern_industrialization:" + output + "_tiny_dust", totalAmount);
+        public void Build(Consumer<FinishedRecipe> consumer) {
+            ShapelessRecipeJson dusts = new ShapelessRecipeJson("modern_industrialization:" + output + "_dust", totalAmount);
+            ShapelessRecipeJson tinyDusts = new ShapelessRecipeJson("modern_industrialization:" + output + "_tiny_dust", totalAmount);
 
             for (int i = 0; i < ingredients.size(); i++) {
                 int n = ingredientAmounts.get(i);
-                dusts.addItemInput("#forge:dusts/" + ingredients.get(i), n);
-                tinyDusts.addItemInput("#forge:tiny_dusts/" + ingredients.get(i), n);
+                for (int j = 0; j < n; j++) {
+                    ShapelessRecipeJson.Ingredient dustIngredient = new ShapelessRecipeJson.Ingredient();
+                    ShapelessRecipeJson.Ingredient tinyDustIngredient = new ShapelessRecipeJson.Ingredient();
+                    dustIngredient.tag = "c:" + ingredients.get(i) + "_dusts";
+                    tinyDustIngredient.tag = "c:" + ingredients.get(i) + "_tiny_dusts";
+                    dusts.addIngredient(dustIngredient);
+                    tinyDusts.addIngredient(tinyDustIngredient);
+                }
             }
 
-            dusts.offerTo(consumer, "alloy/mixer/" + output + "/dust");
-            tinyDusts.offerTo(consumer, "alloy/mixer/" + output + "/tiny_dust");
+            dusts.exportToMachine(MIMachineRecipeTypes.MIXER, 2, 100).offerTo(consumer, "alloy/mixer/" + output + "/dust");
+            tinyDusts.exportToMachine(MIMachineRecipeTypes.MIXER, 2, 100).offerTo(consumer, "alloy/mixer/" + output + "/tiny_dust");
+
         }
 
     }

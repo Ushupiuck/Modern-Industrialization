@@ -23,39 +23,46 @@
  */
 package aztech.modern_industrialization.datagen.tag;
 
-import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.MIBlock;
 import aztech.modern_industrialization.MIIdentifier;
 import aztech.modern_industrialization.definition.BlockDefinition;
 import aztech.modern_industrialization.pipes.MIPipes;
 import java.util.concurrent.CompletableFuture;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
+import net.fabricmc.fabric.api.tag.convention.v1.ConventionalBlockTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.PackOutput;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
-import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.common.data.BlockTagsProvider;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
 
-public class MIBlockTagProvider extends BlockTagsProvider {
-    public MIBlockTagProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider,
-            @Nullable ExistingFileHelper existingFileHelper) {
-        super(output, lookupProvider, MI.ID, existingFileHelper);
+public class MIBlockTagProvider extends FabricTagProvider.BlockTagProvider {
+    public MIBlockTagProvider(FabricDataOutput packOutput, CompletableFuture<HolderLookup.Provider> registriesFuture) {
+        super(packOutput, registriesFuture);
+    }
+
+    @Override
+    protected FabricTagBuilder tag(TagKey<Block> tag) {
+        return getOrCreateTagBuilder(tag);
     }
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        for (BlockDefinition<?> definition : MIBlock.BLOCK_DEFINITIONS.values()) {
+        for (BlockDefinition<?> definition : MIBlock.BLOCKS.values()) {
             for (var tag : definition.tags) {
                 tag(tag).add(definition.asBlock());
             }
         }
 
-        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(MIPipes.BLOCK_PIPE.get());
-        tag(BlockTags.create(new ResourceLocation("forge:relocation_not_supported"))).add(MIPipes.BLOCK_PIPE.get());
+        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(MIPipes.BLOCK_PIPE);
+        tag(ConventionalBlockTags.MOVEMENT_RESTRICTED).add(MIPipes.BLOCK_PIPE);
         // Have no idea why there is such a tag but go add it
-        tag(Tags.Blocks.ORES_QUARTZ).add(BuiltInRegistries.BLOCK.get(new MIIdentifier("quartz_ore")));
+        tag(ConventionalBlockTags.QUARTZ_ORES).add(BuiltInRegistries.BLOCK.get(new MIIdentifier("quartz_ore")));
+
+        // Why is this not in Carrier? :(
+        tag(TagKey.create(Registries.BLOCK, new ResourceLocation("carrier", "blacklist"))).addTag(ConventionalBlockTags.MOVEMENT_RESTRICTED);
     }
 }

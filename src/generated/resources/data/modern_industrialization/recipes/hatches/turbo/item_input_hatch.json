@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "U": {
       "item": "minecraft:hopper"
@@ -14,6 +13,7 @@
     "V"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:turbo_item_input_hatch"
   }
 }

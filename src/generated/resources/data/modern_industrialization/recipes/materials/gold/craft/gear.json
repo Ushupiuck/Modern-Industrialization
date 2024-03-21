@@ -1,9 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "P": {
-      "tag": "forge:plates/gold"
+      "tag": "c:gold_plates"
     },
     "R": {
       "item": "modern_industrialization:gold_ring"
@@ -18,6 +17,7 @@
     "PbP"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:gold_gear"
   }
 }

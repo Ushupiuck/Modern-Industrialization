@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "x": {
       "item": "modern_industrialization:deepslate_tungsten_ore"
@@ -12,6 +11,7 @@
     "   "
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:tungsten_ore"
   }
 }

@@ -29,6 +29,8 @@ import aztech.modern_industrialization.pipes.PipeStatsCollector;
 import aztech.modern_industrialization.pipes.api.PipeNetwork;
 import aztech.modern_industrialization.pipes.api.PipeNetworkData;
 import java.util.*;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.server.level.ServerLevel;
 
 public class ElectricityNetwork extends PipeNetwork {
@@ -60,15 +62,18 @@ public class ElectricityNetwork extends PipeNetwork {
 
         // Do the transfer
         long networkCapacity = loadedNodeCount * tier.getMaxTransfer();
-        long extractMaxAmount = Math.min(tier.getMaxTransfer(), networkCapacity - networkAmount);
-        long extracted = transferForTargets(MIEnergyStorage::extract, storages, extractMaxAmount);
-        networkAmount += extracted;
+        try (var tx = Transaction.openOuter()) {
+            long extractMaxAmount = Math.min(tier.getMaxTransfer(), networkCapacity - networkAmount);
+            long extracted = transferForTargets(MIEnergyStorage::extract, storages, extractMaxAmount, tx);
+            networkAmount += extracted;
 
-        long insertMaxAmount = Math.min(tier.getMaxTransfer(), networkAmount);
-        long inserted = transferForTargets(MIEnergyStorage::receive, storages, insertMaxAmount);
-        networkAmount -= inserted;
+            long insertMaxAmount = Math.min(tier.getMaxTransfer(), networkAmount);
+            long inserted = transferForTargets(MIEnergyStorage::insert, storages, insertMaxAmount, tx);
+            networkAmount -= inserted;
 
-        stats.addValue(Math.max(extracted, inserted));
+            tx.commit();
+            stats.addValue(Math.max(extracted, inserted));
+        }
 
         // Split energy evenly across the nodes
         for (var entry : iterateTickingNodes()) {
@@ -86,7 +91,8 @@ public class ElectricityNetwork extends PipeNetwork {
      * Perform a transfer operation across a list of targets. Will not mutate the
      * list. Does not check for the network's max transfer rate specifically.
      */
-    private static long transferForTargets(TransferOperation operation, List<MIEnergyStorage> targets, long maxAmount) {
+    private static long transferForTargets(TransferOperation operation, List<MIEnergyStorage> targets, long maxAmount,
+            TransactionContext transaction) {
         // Build target list
         List<EnergyTarget> sortableTargets = new ArrayList<>(targets.size());
         for (var target : targets) {
@@ -96,7 +102,9 @@ public class ElectricityNetwork extends PipeNetwork {
         Collections.shuffle(sortableTargets);
         // Simulate the transfer for every target
         for (EnergyTarget target : sortableTargets) {
-            target.simulationResult = operation.transfer(target.target, maxAmount, true);
+            try (var nested = transaction.openNested()) {
+                target.simulationResult = operation.transfer(target.target, maxAmount, nested);
+            }
         }
         // Sort from low to high result
         sortableTargets.sort(Comparator.comparingLong(t -> t.simulationResult));
@@ -108,14 +116,14 @@ public class ElectricityNetwork extends PipeNetwork {
             long remainingAmount = maxAmount - transferredAmount;
             long targetMaxAmount = remainingAmount / remainingTargets;
 
-            transferredAmount += operation.transfer(target.target, targetMaxAmount, false);
+            transferredAmount += operation.transfer(target.target, targetMaxAmount, transaction);
         }
         return transferredAmount;
     }
 
     @FunctionalInterface
     private interface TransferOperation {
-        long transfer(MIEnergyStorage transferable, long maxAmount, boolean simulate);
+        long transfer(MIEnergyStorage transferable, long maxAmount, TransactionContext transaction);
     }
 
     private static class EnergyTarget {

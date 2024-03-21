@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "x": {
       "item": "modern_industrialization:le_mox_dust"

@@ -7,7 +7,7 @@
   ],
   "key": {
     "#": {
-      "tag": "forge:plates/bronze"
+      "tag": "c:bronze_plates"
     },
     "T": {
       "item": "modern_industrialization:bronze_tank"

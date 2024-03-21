@@ -1,4 +1,5 @@
 {
+  "replace": false,
   "values": [
     "modern_industrialization:item_pipe",
     "modern_industrialization:white_item_pipe",

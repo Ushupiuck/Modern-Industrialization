@@ -5,7 +5,7 @@
   "item_inputs": [
     {
       "amount": 1,
-      "tag": "forge:storage_blocks/raw_platinum"
+      "tag": "c:raw_platinum_blocks"
     }
   ],
   "item_outputs": [

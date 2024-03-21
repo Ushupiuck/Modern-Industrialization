@@ -1,9 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "d": {
-      "tag": "forge:dyes/red"
+      "tag": "c:red_dyes"
     },
     "p": {
       "tag": "modern_industrialization:fluid_pipes"

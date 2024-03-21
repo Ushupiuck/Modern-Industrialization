@@ -1,12 +1,11 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "#": {
-      "tag": "forge:plates/stainless_steel"
+      "tag": "c:stainless_steel_plates"
     },
     "G": {
-      "tag": "forge:glass"
+      "tag": "c:glass_blocks"
     }
   },
   "pattern": [
@@ -15,6 +14,7 @@
     "###"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:stainless_steel_tank"
   }
 }

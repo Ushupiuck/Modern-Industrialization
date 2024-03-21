@@ -23,8 +23,7 @@
  */
 package aztech.modern_industrialization.misc.autotest;
 
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.TickEvent;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 
 /**
@@ -34,15 +33,12 @@ public class MIAutoTesting {
     private static int ticks = 0;
 
     public static void init() {
-        NeoForge.EVENT_BUS.addListener(TickEvent.ServerTickEvent.class, event -> {
-            if (event.phase != TickEvent.Phase.START) {
-                return;
-            }
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
             ticks++;
 
             if (ticks == 40) {
                 MixinEnvironment.getCurrentEnvironment().audit();
-                event.getServer().halt(false);
+                server.halt(false);
             }
         });
     }

@@ -23,10 +23,11 @@
  */
 package aztech.modern_industrialization.api.energy;
 
-import dev.technici4n.grandpower.api.ILongEnergyStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import org.jetbrains.annotations.ApiStatus;
+import team.reborn.energy.api.EnergyStorage;
 
-public interface MIEnergyStorage extends ILongEnergyStorage {
+public interface MIEnergyStorage extends EnergyStorage {
     boolean canConnect(CableTier cableTier);
 
     /**
@@ -46,24 +47,24 @@ public interface MIEnergyStorage extends ILongEnergyStorage {
 
     interface NoExtract extends MIEnergyStorage {
         @Override
-        default boolean canExtract() {
+        default boolean supportsExtraction() {
             return false;
         }
 
         @Override
-        default long extract(long maxExtract, boolean simulate) {
+        default long extract(long maxAmount, TransactionContext transaction) {
             return 0;
         }
     }
 
     interface NoInsert extends MIEnergyStorage {
         @Override
-        default boolean canReceive() {
+        default boolean supportsInsertion() {
             return false;
         }
 
         @Override
-        default long receive(long amount, boolean simulate) {
+        default long insert(long maxAmount, TransactionContext transaction) {
             return 0;
         }
     }

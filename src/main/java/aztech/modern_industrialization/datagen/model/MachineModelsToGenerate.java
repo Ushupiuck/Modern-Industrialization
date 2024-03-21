@@ -23,23 +23,20 @@
  */
 package aztech.modern_industrialization.datagen.model;
 
-import aztech.modern_industrialization.machines.models.MachineCasing;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MachineModelsToGenerate {
-    static final Map<String, MachineModelProperties> props = new HashMap<>();
+    static final Map<String, MachineModelProperties> PROPS = new HashMap<>();
 
-    public static void register(String machine, MachineCasing defaultCasing, String overlay, boolean front, boolean top, boolean side,
-            boolean active) {
-        props.put(machine, new MachineModelProperties(defaultCasing, overlay, front, top, side, active));
+    public static void register(String machine, String overlay, boolean front, boolean top, boolean side, boolean active) {
+        PROPS.put(machine, new MachineModelProperties(overlay, front, top, side, active));
     }
 
-    record MachineModelProperties(MachineCasing defaultCasing, String overlay, boolean front, boolean top, boolean side, boolean active) {
-        void addToMachineJson(JsonObject obj) {
-            obj.addProperty("casing", defaultCasing.name);
-
+    record MachineModelProperties(String overlay, boolean front, boolean top, boolean side, boolean active) {
+        JsonObject toMachineJson() {
+            var obj = new JsonObject();
             var defaultOverlays = new JsonObject();
 
             if (top) {
@@ -67,6 +64,7 @@ public class MachineModelsToGenerate {
             defaultOverlays.addProperty("fluid_auto", "modern_industrialization:block/overlays/fluid_auto");
 
             obj.add("default_overlays", defaultOverlays);
+            return obj;
         }
     }
 }

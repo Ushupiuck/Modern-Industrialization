@@ -5,11 +5,11 @@
   "item_inputs": [
     {
       "amount": 8,
-      "tag": "forge:plates/invar"
+      "tag": "c:invar_plates"
     },
     {
       "amount": 1,
-      "tag": "forge:gears/invar"
+      "tag": "c:invar_gears"
     }
   ],
   "item_outputs": [

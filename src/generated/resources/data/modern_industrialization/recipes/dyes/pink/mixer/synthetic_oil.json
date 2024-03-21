@@ -12,7 +12,7 @@
     {
       "amount": 1,
       "probability": 0.0,
-      "tag": "forge:dyes/pink"
+      "tag": "c:pink_dyes"
     }
   ],
   "item_outputs": [

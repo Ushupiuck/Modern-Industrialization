@@ -5,7 +5,7 @@
   "item_inputs": [
     {
       "amount": 1,
-      "tag": "forge:dyes/red"
+      "tag": "c:red_dyes"
     },
     {
       "amount": 1,

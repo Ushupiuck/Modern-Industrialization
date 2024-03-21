@@ -5,7 +5,7 @@
   "item_inputs": [
     {
       "amount": 9,
-      "tag": "forge:ingots/plutonium"
+      "tag": "c:plutonium_ingots"
     },
     {
       "amount": 1,

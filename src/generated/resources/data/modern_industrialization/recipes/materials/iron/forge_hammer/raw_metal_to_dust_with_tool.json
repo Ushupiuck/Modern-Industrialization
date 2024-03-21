@@ -1,12 +1,16 @@
 {
   "type": "modern_industrialization:forge_hammer",
-  "count": 3,
-  "damage": 30,
-  "ingredient": {
-    "tag": "forge:raw_materials/iron"
-  },
-  "result": {
-    "count": 4,
-    "item": "modern_industrialization:iron_dust"
-  }
+  "hammer_damage": 30,
+  "item_inputs": [
+    {
+      "amount": 3,
+      "tag": "c:raw_iron_ores"
+    }
+  ],
+  "item_outputs": [
+    {
+      "amount": 4,
+      "item": "modern_industrialization:iron_dust"
+    }
+  ]
 }

@@ -26,6 +26,12 @@ MIRegistrationEvents.registerFluids(event => {
 ```
 
 # Adding fluid fuels
-You can add fluid fuels using data maps.
-This will allow them to be used in diesel generators, diesel jetpacks, etc...
-See `data/modern_industrialization/data_maps/fluid/fluid_fuels.json` in the MI jar.
+You can add fluid fuels using KubeJS. This will allow them to be used in diesel generators, diesel jetpacks, etc...
+
+Example:
+```js
+MIRegistrationEvents.registerFluidFuels(event => {
+    // id of the fluid, amount of EU per mb of the fluid
+    event.register("modern_industrialization:alien_oil", 10000);
+});
+```

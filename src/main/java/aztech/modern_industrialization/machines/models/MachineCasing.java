@@ -25,6 +25,7 @@ package aztech.modern_industrialization.machines.models;
 
 public class MachineCasing {
     public final String name;
+    Object model;
 
     MachineCasing(String name) {
         this.name = name;

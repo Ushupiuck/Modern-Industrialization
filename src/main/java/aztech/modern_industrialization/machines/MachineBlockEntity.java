@@ -23,7 +23,6 @@
  */
 package aztech.modern_industrialization.machines;
 
-import aztech.modern_industrialization.MICapabilities;
 import aztech.modern_industrialization.blocks.FastBlockEntity;
 import aztech.modern_industrialization.blocks.WrenchableBlockEntity;
 import aztech.modern_industrialization.inventory.ConfigurableFluidStack;
@@ -43,6 +42,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -54,7 +57,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -63,8 +65,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.client.model.data.ModelData;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,7 +74,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @SuppressWarnings("rawtypes")
 public abstract class MachineBlockEntity extends FastBlockEntity
-        implements MenuProvider, WrenchableBlockEntity {
+        implements ExtendedScreenHandlerFactory, RenderAttachmentBlockEntity, WrenchableBlockEntity {
     public final List<GuiComponent.Server> guiComponents = new ArrayList<>();
     private final List<IComponent> icomponents = new ArrayList<>();
     public final MachineGuiParameters guiParams;
@@ -94,7 +94,7 @@ public abstract class MachineBlockEntity extends FastBlockEntity
     public MachineBlockEntity(BEP bep, MachineGuiParameters guiParams, OrientationComponent.Params orientationParams) {
         super(bep.type(), bep.pos(), bep.state());
         this.guiParams = guiParams;
-        this.orientation = new OrientationComponent(orientationParams, this);
+        this.orientation = new OrientationComponent(orientationParams);
         this.placedBy = new PlacedByComponent();
 
         registerComponents(orientation, placedBy);
@@ -164,7 +164,8 @@ public abstract class MachineBlockEntity extends FastBlockEntity
         return new MachineMenuServer(syncId, inv, this, guiParams);
     }
 
-    public final void writeScreenOpeningData(FriendlyByteBuf buf) {
+    @Override
+    public final void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
         // Write inventory
         MIInventory inv = getInventory();
         CompoundTag tag = new CompoundTag();
@@ -191,11 +192,11 @@ public abstract class MachineBlockEntity extends FastBlockEntity
         return InteractionResult.PASS;
     }
 
-    public void openMenu(ServerPlayer player) {
-        player.openMenu(this, this::writeScreenOpeningData);
+    public void openMenu(Player player) {
+        player.openMenu(this);
     }
 
-    protected abstract MachineModelClientData getMachineModelData();
+    protected abstract MachineModelClientData getModelData();
 
     @MustBeInvokedByOverriders
     public void onPlaced(LivingEntity placer, ItemStack itemStack) {
@@ -217,10 +218,8 @@ public abstract class MachineBlockEntity extends FastBlockEntity
     }
 
     @Override
-    public final ModelData getModelData() {
-        return ModelData.builder()
-                .with(MachineModelClientData.KEY, getMachineModelData())
-                .build();
+    public final Object getRenderAttachmentData() {
+        return getModelData();
     }
 
     @Override
@@ -253,13 +252,9 @@ public abstract class MachineBlockEntity extends FastBlockEntity
 
     @Override
     public final void load(CompoundTag tag) {
-        load(tag, false);
-    }
-
-    public final void load(CompoundTag tag, boolean isUpgradingMachine) {
         if (!tag.contains("remesh")) {
             for (IComponent component : icomponents) {
-                component.readNbt(tag, isUpgradingMachine);
+                component.readNbt(tag);
             }
         } else {
             boolean forceChunkRemesh = tag.getBoolean("remesh");
@@ -268,7 +263,6 @@ public abstract class MachineBlockEntity extends FastBlockEntity
             }
             if (forceChunkRemesh) {
                 WorldHelper.forceChunkRemesh(level, worldPosition);
-                requestModelDataUpdate();
             }
         }
     }
@@ -285,17 +279,11 @@ public abstract class MachineBlockEntity extends FastBlockEntity
     }
 
     public static void registerItemApi(BlockEntityType<?> bet) {
-        MICapabilities.onEvent(event -> {
-            event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, bet,
-                    (be, direction) -> ((MachineBlockEntity) be).getInventory().itemStorage.itemHandler);
-        });
+        ItemStorage.SIDED.registerForBlockEntities((be, direction) -> ((MachineBlockEntity) be).getInventory().itemStorage, bet);
     }
 
     public static void registerFluidApi(BlockEntityType<?> bet) {
-        MICapabilities.onEvent(event -> {
-            event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, bet,
-                    (be, direction) -> ((MachineBlockEntity) be).getInventory().fluidStorage.fluidHandler);
-        });
+        FluidStorage.SIDED.registerForBlockEntities((be, direction) -> ((MachineBlockEntity) be).getInventory().fluidStorage, bet);
     }
 
     public List<ItemStack> dropExtra() {

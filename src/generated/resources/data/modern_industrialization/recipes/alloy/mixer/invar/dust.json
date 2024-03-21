@@ -5,11 +5,11 @@
   "item_inputs": [
     {
       "amount": 2,
-      "tag": "forge:dusts/iron"
+      "tag": "c:iron_dusts"
     },
     {
       "amount": 1,
-      "tag": "forge:dusts/nickel"
+      "tag": "c:nickel_dusts"
     }
   ],
   "item_outputs": [

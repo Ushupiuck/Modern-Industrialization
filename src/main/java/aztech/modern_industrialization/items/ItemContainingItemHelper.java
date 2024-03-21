@@ -23,8 +23,12 @@
  */
 package aztech.modern_industrialization.items;
 
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.item.InventoryStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.InsertionOnlyStorage;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
@@ -60,33 +64,32 @@ public interface ItemContainingItemHelper extends ContainerItem<ItemVariant> {
     }
 
     default boolean handleClick(Player player, ItemStack barrelLike, Mutable<ItemStack> otherStack) {
-        if (!(barrelLike.getItem() instanceof ItemContainingItemHelper)) {
+        if (!(barrelLike.getItem() instanceof ItemContainingItemHelper helper)) {
             throw new AssertionError("This method should only be called on a ItemContainingItemHelper.");
         }
 
-        var barrelHandler = new ItemHandler(barrelLike, this);
+        var barrelStorage = GenericItemStorage.of(barrelLike, this);
+        // The player can ignore the lock of the barrel when inserting items.
+        InsertionOnlyStorage<ItemVariant> barrelStorageIgnoreLock = (res, max, tx) -> barrelStorage.insert(res, max, tx, true, true);
 
-        // Try to fill barrel with otherStack
-        int otherCount = otherStack.getValue().getCount();
-        var leftover = barrelHandler.insertItem(0, otherStack.getValue(), false);
-        int insertedCount = otherCount - leftover.getCount();
-        otherStack.setValue(leftover);
-        if (insertedCount != 0) {
-            return true;
-        }
-
-        // Try to empty barrel into otherStack
-        var heldStack = barrelHandler.getStackInSlot(0);
-        if (!heldStack.isEmpty()) {
-            if (otherStack.getValue().isEmpty() || ItemStack.isSameItemSameTags(heldStack, otherStack.getValue())) {
-                var extracted = barrelHandler.extractItem(0, heldStack.getMaxStackSize() - otherStack.getValue().getCount(), false);
-                extracted.grow(otherStack.getValue().getCount()); // Grow by existing items
-                otherStack.setValue(extracted);
-                return true;
+        SimpleContainer otherInv = new SimpleContainer(otherStack.getValue().copy()) {
+            @Override
+            public void setItem(int slot, ItemStack stack) {
+                // Override vanilla clamping to max stack size.
+                // This fixes interactions with stacks greater than their max size,
+                // for example when interacting in Dank Storage GUIs.
+                this.items.set(slot, stack);
             }
-        }
+        };
+        var otherInvStorage = InventoryStorage.of(otherInv, null);
 
-        return !isEmpty(barrelLike) || !otherStack.getValue().isEmpty();
+        if (StorageUtil.move(otherInvStorage, barrelStorageIgnoreLock, (iv) -> true, Long.MAX_VALUE, null) > 0
+                || StorageUtil.move(barrelStorage, otherInvStorage, (iv) -> true, Long.MAX_VALUE, null) > 0) {
+            otherStack.setValue(otherInv.getItem(0));
+            return true;
+        } else {
+            return !isEmpty(barrelLike) || !otherStack.getValue().isEmpty();
+        }
     }
 
     @Override

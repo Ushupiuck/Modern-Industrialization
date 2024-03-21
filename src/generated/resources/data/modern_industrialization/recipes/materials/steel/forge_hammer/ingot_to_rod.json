@@ -1,9 +1,15 @@
 {
   "type": "modern_industrialization:forge_hammer",
-  "ingredient": {
-    "tag": "forge:ingots/steel"
-  },
-  "result": {
-    "item": "modern_industrialization:steel_rod"
-  }
+  "item_inputs": [
+    {
+      "amount": 1,
+      "tag": "c:steel_ingots"
+    }
+  ],
+  "item_outputs": [
+    {
+      "amount": 1,
+      "item": "modern_industrialization:steel_rod"
+    }
+  ]
 }

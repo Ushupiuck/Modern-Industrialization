@@ -23,7 +23,6 @@
  */
 package aztech.modern_industrialization.machines.blockentities;
 
-import aztech.modern_industrialization.MICapabilities;
 import aztech.modern_industrialization.api.energy.CableTier;
 import aztech.modern_industrialization.api.energy.EnergyApi;
 import aztech.modern_industrialization.api.energy.MIEnergyStorage;
@@ -40,9 +39,10 @@ import aztech.modern_industrialization.machines.guicomponents.SlotPanel;
 import aztech.modern_industrialization.machines.helper.EnergyHelper;
 import aztech.modern_industrialization.machines.models.MachineCasing;
 import aztech.modern_industrialization.machines.models.MachineModelClientData;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.transaction.Transaction;
 import aztech.modern_industrialization.util.Simulation;
 import aztech.modern_industrialization.util.Tickable;
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -105,7 +105,7 @@ public abstract class AbstractStorageMachineBlockEntity extends MachineBlockEnti
     }
 
     @Override
-    protected MachineModelClientData getMachineModelData() {
+    protected MachineModelClientData getModelData() {
         MachineModelClientData data = new MachineModelClientData();
         orientation.writeModelData(data);
         return data;
@@ -135,15 +135,14 @@ public abstract class AbstractStorageMachineBlockEntity extends MachineBlockEnti
 
     @Override
     protected InteractionResult onUse(Player player, InteractionHand hand, Direction face) {
-        var energyItem = player.getItemInHand(hand).getCapability(EnergyApi.ITEM);
-        int stackSize = player.getItemInHand(hand).getCount();
+        var energyItem = ContainerItemContext.ofPlayerHand(player, hand).find(EnergyApi.ITEM);
         if (energyItem != null) {
             if (!player.level().isClientSide()) {
                 boolean insertedSomething = false;
 
                 for (int i = 0; i < 10000; ++i) { // Try up to 10000 times to bypass I/O limits
                     try (Transaction transaction = Transaction.openOuter()) {
-                        long inserted = energyItem.receive(energy.getEu() / stackSize, false);
+                        long inserted = energyItem.insert(energy.getEu(), transaction);
 
                         if (inserted == 0) {
                             break;
@@ -151,7 +150,7 @@ public abstract class AbstractStorageMachineBlockEntity extends MachineBlockEnti
                             insertedSomething = true;
                         }
 
-                        energy.consumeEu(inserted * stackSize, Simulation.ACT);
+                        energy.consumeEu(inserted, Simulation.ACT);
                         transaction.commit();
                     }
                 }
@@ -159,13 +158,13 @@ public abstract class AbstractStorageMachineBlockEntity extends MachineBlockEnti
                 if (!insertedSomething) {
                     for (int i = 0; i < 10000; ++i) { // Try up to 10000 times to bypass I/O limits
                         try (Transaction transaction = Transaction.openOuter()) {
-                            long extracted = energyItem.extract(energy.getRemainingCapacity() / stackSize, false);
+                            long extracted = energyItem.extract(energy.getRemainingCapacity(), transaction);
 
                             if (extracted == 0) {
                                 break;
                             }
 
-                            energy.insertEu(extracted * stackSize, Simulation.ACT);
+                            energy.insertEu(extracted, Simulation.ACT);
                             transaction.commit();
                         }
                     }
@@ -177,24 +176,22 @@ public abstract class AbstractStorageMachineBlockEntity extends MachineBlockEnti
     }
 
     public static void registerEnergyApi(BlockEntityType<?> bet) {
-        MICapabilities.onEvent(event -> {
-            event.registerBlockEntity(EnergyApi.SIDED, bet, (be, direction) -> {
-                AbstractStorageMachineBlockEntity abe = (AbstractStorageMachineBlockEntity) be;
+        EnergyApi.SIDED.registerForBlockEntities((be, direction) -> {
+            AbstractStorageMachineBlockEntity abe = (AbstractStorageMachineBlockEntity) be;
 
-                if (abe.extractableOnOutputDirection) {
-                    if (abe.orientation.outputDirection == direction) {
-                        return abe.extractable;
-                    } else {
-                        return abe.insertable;
-                    }
+            if (abe.extractableOnOutputDirection) {
+                if (abe.orientation.outputDirection == direction) {
+                    return abe.extractable;
                 } else {
-                    if (abe.orientation.outputDirection == direction) {
-                        return abe.insertable;
-                    } else {
-                        return abe.extractable;
-                    }
+                    return abe.insertable;
                 }
-            });
-        });
+            } else {
+                if (abe.orientation.outputDirection == direction) {
+                    return abe.insertable;
+                } else {
+                    return abe.extractable;
+                }
+            }
+        }, bet);
     }
 }

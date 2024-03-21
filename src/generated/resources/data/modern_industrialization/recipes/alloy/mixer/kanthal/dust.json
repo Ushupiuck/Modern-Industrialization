@@ -5,15 +5,15 @@
   "item_inputs": [
     {
       "amount": 1,
-      "tag": "forge:dusts/stainless_steel"
+      "tag": "c:chromium_dusts"
     },
     {
       "amount": 1,
-      "tag": "forge:dusts/chromium"
+      "tag": "c:aluminum_dusts"
     },
     {
       "amount": 1,
-      "tag": "forge:dusts/aluminum"
+      "tag": "c:stainless_steel_dusts"
     }
   ],
   "item_outputs": [

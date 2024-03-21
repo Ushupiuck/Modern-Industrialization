@@ -23,8 +23,8 @@
  */
 package aztech.modern_industrialization;
 
-import aztech.modern_industrialization.api.datamaps.MIDataMaps;
 import aztech.modern_industrialization.api.energy.EnergyApi;
+import aztech.modern_industrialization.api.pipe.item.SpeedUpgrade;
 import aztech.modern_industrialization.blocks.OreBlock;
 import aztech.modern_industrialization.definition.FluidLike;
 import aztech.modern_industrialization.items.PortableStorageUnit;
@@ -45,6 +45,9 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -174,7 +177,7 @@ public class MITooltips {
     public static final Parser<Fluid> FLUID_PARSER = new Parser<>() {
         @Override
         public Component parse(Fluid fluid) {
-            return fluid.getFluidType().getDescription();
+            return FluidVariantAttributes.getName(FluidVariant.of(fluid));
         }
     };
 
@@ -218,8 +221,8 @@ public class MITooltips {
 
     public static final TooltipAttachment CABLES = TooltipAttachment.of(
             (itemStack, item) -> {
-                if (item instanceof PipeItem pipe && MIPipes.ELECTRICITY_PIPE_TIER.containsKey(pipe.type)) {
-                    var tier = MIPipes.ELECTRICITY_PIPE_TIER.get(pipe.type);
+                if (item instanceof PipeItem pipe && MIPipes.ELECTRICITY_PIPE_TIER.containsKey(pipe)) {
+                    var tier = MIPipes.ELECTRICITY_PIPE_TIER.get((PipeItem) itemStack.getItem());
                     return Optional.of(new Line(MIText.EuCable).arg(tier.shortEnglishName()).arg(tier.getMaxTransfer(), EU_PER_TICK_PARSER).build());
                 } else {
                     return Optional.empty();
@@ -250,8 +253,8 @@ public class MITooltips {
 
     public static final TooltipAttachment ENERGY_STORED_ITEM = TooltipAttachment.of(
             (itemStack, item) -> {
-                if (BuiltInRegistries.ITEM.getKey(item).getNamespace().equals(MI.ID)) {
-                    var energyStorage = itemStack.getCapability(EnergyApi.ITEM);
+                if (BuiltInRegistries.ITEM.getKey(item).getNamespace().equals(ModernIndustrialization.MOD_ID)) {
+                    var energyStorage = ContainerItemContext.withConstant(itemStack).find(EnergyApi.ITEM);
                     if (energyStorage != null) {
                         long capacity = energyStorage.getCapacity();
                         if (capacity > 0) {
@@ -339,12 +342,12 @@ public class MITooltips {
 
     public static final TooltipAttachment SPEED_UPGRADES = TooltipAttachment.of(
             (itemStack, item) -> {
-                var upgrade = itemStack.getItemHolder().getData(MIDataMaps.ITEM_PIPE_UPGRADES);
-                if (upgrade != null) {
-                    return Optional.of(new Line(MIText.TooltipSpeedUpgrade).arg(upgrade.maxExtractedItems()).build());
+                if (SpeedUpgrade.UPGRADES.containsKey(item)) {
+                    return Optional.of(new Line(MIText.TooltipSpeedUpgrade).arg(SpeedUpgrade.UPGRADES.get(item)).build());
                 } else {
                     return Optional.empty();
                 }
+
             });
 
     public static final TooltipAttachment UPGRADES = TooltipAttachment.ofMultilines(

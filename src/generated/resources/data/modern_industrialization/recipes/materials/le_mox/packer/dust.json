@@ -5,7 +5,7 @@
   "item_inputs": [
     {
       "amount": 9,
-      "tag": "forge:tiny_dusts/le_mox"
+      "tag": "c:le_mox_tiny_dusts"
     }
   ],
   "item_outputs": [

@@ -1,14 +1,13 @@
 {
-  "neoforge:conditions": [
+  "fabric:load_conditions": [
     {
-      "type": "modern_industrialization:ae_compat_loaded"
+      "condition": "modern_industrialization:ae_compat_loaded"
     }
   ],
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "d": {
-      "tag": "forge:dyes/lime"
+      "tag": "c:lime_dyes"
     },
     "p": {
       "tag": "modern_industrialization:me_wires"
@@ -18,6 +17,7 @@
     "pd"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:lime_me_wire"
   }
 }

@@ -1,9 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "d": {
-      "tag": "forge:dyes/purple"
+      "tag": "c:purple_dyes"
     },
     "p": {
       "tag": "modern_industrialization:item_pipes"

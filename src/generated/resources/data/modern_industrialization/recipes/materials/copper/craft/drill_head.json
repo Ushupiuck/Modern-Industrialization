@@ -1,9 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "G": {
-      "tag": "forge:gears/copper"
+      "tag": "c:copper_gears"
     },
     "R": {
       "item": "modern_industrialization:copper_rod"
@@ -15,7 +14,7 @@
       "item": "modern_industrialization:copper_curved_plate"
     },
     "p": {
-      "tag": "forge:plates/copper"
+      "tag": "c:copper_plates"
     }
   },
   "pattern": [
@@ -24,6 +23,7 @@
     "bGb"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:copper_drill_head"
   }
 }

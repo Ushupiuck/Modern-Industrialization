@@ -82,7 +82,7 @@ public class UpgradeComponent implements IComponent.ServerOnly, DropableComponen
     }
 
     @Override
-    public void readNbt(CompoundTag tag, boolean isUpgradingMachine) {
+    public void readNbt(CompoundTag tag) {
         itemStack = ItemStack.of(tag.getCompound("upgradesItemStack"));
     }
 

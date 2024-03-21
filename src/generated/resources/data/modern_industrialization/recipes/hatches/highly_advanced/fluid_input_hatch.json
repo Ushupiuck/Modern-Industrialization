@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "U": {
       "item": "modern_industrialization:titanium_tank"
@@ -14,6 +13,7 @@
     "V"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:highly_advanced_fluid_input_hatch"
   }
 }

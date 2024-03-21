@@ -35,9 +35,9 @@ public class MIBucketItem extends BucketItem {
 
     public final int color;
 
-    public MIBucketItem(MIFluid fluid, int color, Properties settings) {
+    public MIBucketItem(MIFluid fluid, Properties settings) {
         super(fluid, settings.stacksTo(1).craftRemainder(Items.BUCKET));
-        this.color = FluidHelper.getColorMinLuminance(color);
+        this.color = FluidHelper.getColorMinLuminance(fluid.color);
     }
 
     @Override

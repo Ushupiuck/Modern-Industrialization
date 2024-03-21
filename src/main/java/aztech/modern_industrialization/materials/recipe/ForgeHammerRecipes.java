@@ -24,11 +24,12 @@
 package aztech.modern_industrialization.materials.recipe;
 
 import static aztech.modern_industrialization.materials.part.MIParts.*;
+import static aztech.modern_industrialization.materials.property.MaterialProperty.HARDNESS;
 
+import aztech.modern_industrialization.machines.init.MIMachineRecipeTypes;
 import aztech.modern_industrialization.materials.MaterialBuilder;
 import aztech.modern_industrialization.materials.part.PartKeyProvider;
-import aztech.modern_industrialization.materials.recipe.builder.ForgeHammerRecipeBuilder;
-import net.minecraft.world.item.ItemStack;
+import aztech.modern_industrialization.materials.recipe.builder.MIRecipeBuilder;
 
 /**
  * Standard forge hammer recipes for early-game materials.
@@ -83,13 +84,9 @@ public class ForgeHammerRecipes {
             int outputCount, int cost) {
 
         String recipeName = inputPart.key() + "_to_" + outputPart.key() + ((cost == 0) ? "" : "_with_tool");
-        var input = ctx.getPart(inputPart);
-        var output = ctx.getPart(outputPart);
 
-        if (input != null && output != null) {
-            var outputStack = new ItemStack(output, outputCount);
-            new ForgeHammerRecipeBuilder(ctx, recipeName, input.getTaggedIngredient(), inputCount, outputStack, cost);
-        }
+        new MIRecipeBuilder(ctx, MIMachineRecipeTypes.FORGE_HAMMER, recipeName, (int) ((cost) * ctx.get(HARDNESS).timeFactor),
+                0).addTaggedPartInput(inputPart, inputCount).addPartOutput(outputPart, outputCount);
     }
 
     private static void addRecipe(MaterialBuilder.RecipeContext ctx, PartKeyProvider inputPart, int inputCount, PartKeyProvider outputPart,

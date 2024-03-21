@@ -24,52 +24,49 @@
 package aztech.modern_industrialization.definition;
 
 import aztech.modern_industrialization.MIItem;
-import aztech.modern_industrialization.datagen.loot.MIBlockLoot;
-import aztech.modern_industrialization.datagen.model.BaseModelProvider;
 import aztech.modern_industrialization.items.SortOrder;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.minecraft.data.loot.BlockLootSubProvider;
+import net.minecraft.data.models.BlockModelGenerators;
+import net.minecraft.data.models.ItemModelGenerators;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import org.jetbrains.annotations.Nullable;
 
-public class BlockDefinition<T extends Block> extends Definition implements ItemLike, Supplier<T> {
+public class BlockDefinition<T extends Block> extends Definition implements ItemLike {
 
-    private final DeferredBlock<T> block;
+    public final T block;
     public final ItemDefinition<BlockItem> blockItem;
 
-    public final BiConsumer<Block, BaseModelProvider> modelGenerator;
-    @Nullable
-    public final MIBlockLoot blockLoot;
+    public final BiConsumer<Block, BlockModelGenerators> modelGenerator;
+    public final BiConsumer<Block, BlockLootSubProvider> lootTableGenerator;
     public final List<TagKey<Block>> tags;
 
     private BiConsumer<Block, Item> onBlockRegistrationEvent;
 
-    public BlockDefinition(String englishName, DeferredBlock<T> block,
-            BiFunction<? super T, Item.Properties, BlockItem> blockItemCtor,
-            BiConsumer<Block, BaseModelProvider> modelGenerator,
-            BiConsumer<Item, ItemModelProvider> itemModelGenerator,
-            MIBlockLoot blockLoot,
+    public BlockDefinition(String englishName, String id, T block,
+            BiFunction<? super T, FabricItemSettings, BlockItem> blockItemCtor,
+            BiConsumer<Block, BlockModelGenerators> modelGenerator,
+            BiConsumer<Item, ItemModelGenerators> itemModelGenerator,
+            BiConsumer<Block, BlockLootSubProvider> lootTableGenerator,
             List<TagKey<Block>> tags,
             SortOrder sortOrder) {
 
-        super(englishName, block.getId().getPath(), false);
+        super(englishName, id, false);
         this.block = block;
         this.blockItem = MIItem.item(
                 englishName,
-                path(),
-                s -> blockItemCtor.apply(block.get(), s),
+                id,
+                s -> blockItemCtor.apply(block, s),
                 itemModelGenerator,
                 sortOrder);
         this.modelGenerator = modelGenerator;
-        this.blockLoot = blockLoot;
+        this.lootTableGenerator = lootTableGenerator;
         this.tags = tags;
     }
 
@@ -89,7 +86,7 @@ public class BlockDefinition<T extends Block> extends Definition implements Item
     }
 
     public T asBlock() {
-        return block.get();
+        return block;
     }
 
     @Override
@@ -99,12 +96,8 @@ public class BlockDefinition<T extends Block> extends Definition implements Item
 
     public void onRegister() {
         if (onBlockRegistrationEvent != null) {
-            onBlockRegistrationEvent.accept(block.get(), blockItem.asItem());
+            onBlockRegistrationEvent.accept(block, blockItem.asItem());
         }
     }
 
-    @Override
-    public T get() {
-        return asBlock();
-    }
 }

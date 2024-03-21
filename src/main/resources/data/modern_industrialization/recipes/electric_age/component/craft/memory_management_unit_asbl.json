@@ -9,7 +9,7 @@
   "key":
   {
     "P" : {
-      "tag" : "forge:plates/emerald"
+      "tag" : "c:emerald_plates"
     },
     "w" : {
       "item" : "modern_industrialization:silicon_wafer"

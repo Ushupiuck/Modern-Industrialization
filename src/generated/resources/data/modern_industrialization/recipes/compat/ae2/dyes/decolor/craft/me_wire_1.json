@@ -1,11 +1,10 @@
 {
-  "neoforge:conditions": [
+  "fabric:load_conditions": [
     {
-      "type": "modern_industrialization:ae_compat_loaded"
+      "condition": "modern_industrialization:ae_compat_loaded"
     }
   ],
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "b": {
       "item": "minecraft:water_bucket"
@@ -18,6 +17,7 @@
     "pb"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:me_wire"
   }
 }

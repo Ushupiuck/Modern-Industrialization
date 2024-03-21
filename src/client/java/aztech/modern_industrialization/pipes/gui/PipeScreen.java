@@ -25,16 +25,18 @@ package aztech.modern_industrialization.pipes.gui;
 
 import aztech.modern_industrialization.MIText;
 import aztech.modern_industrialization.client.screen.MIHandledScreen;
-import aztech.modern_industrialization.network.pipes.IncrementPriorityPacket;
-import aztech.modern_industrialization.network.pipes.SetConnectionTypePacket;
 import aztech.modern_industrialization.pipes.gui.iface.ConnectionTypeInterface;
 import aztech.modern_industrialization.pipes.gui.iface.PriorityInterface;
+import aztech.modern_industrialization.pipes.impl.PipePackets;
 import aztech.modern_industrialization.util.TextHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -56,6 +58,7 @@ public abstract class PipeScreen<SH extends AbstractContainerMenu> extends MIHan
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float delta, int mouseX, int mouseY) {
+        this.renderBackground(guiGraphics);
         RenderSystem.setShaderColor(1, 1, 1, 1);
         guiGraphics.blit(getBackgroundTexture(), this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
     }
@@ -102,7 +105,11 @@ public abstract class PipeScreen<SH extends AbstractContainerMenu> extends MIHan
             int channel, Supplier<List<Component>> priorityTooltip) {
         addRenderableWidget(new PriorityButton(x + this.leftPos, y + this.topPos, width, u, text, button -> {
             priority.incrementPriority(channel, delta);
-            new IncrementPriorityPacket(menu.containerId, channel, delta).sendToServer();
+            FriendlyByteBuf buf = PacketByteBufs.create();
+            buf.writeInt(menu.containerId);
+            buf.writeInt(channel);
+            buf.writeInt(delta);
+            ClientPlayNetworking.send(PipePackets.INCREMENT_PRIORITY, buf);
         }, priorityTooltip));
     }
 
@@ -135,7 +142,10 @@ public abstract class PipeScreen<SH extends AbstractContainerMenu> extends MIHan
         addRenderableWidget(new ConnectionTypeButton(x + this.leftPos, y + this.topPos, widget -> {
             int newType = connectionTypeNext(connectionType);
             connectionType.setConnectionType(newType);
-            new SetConnectionTypePacket(menu.containerId, newType).sendToServer();
+            FriendlyByteBuf buf = PacketByteBufs.create();
+            buf.writeInt(menu.containerId);
+            buf.writeInt(newType);
+            ClientPlayNetworking.send(PipePackets.SET_CONNECTION_TYPE, buf);
         }, () -> {
             List<Component> lines = new ArrayList<>();
             Component component = getConnectionTypeText(connectionType.getConnectionType());

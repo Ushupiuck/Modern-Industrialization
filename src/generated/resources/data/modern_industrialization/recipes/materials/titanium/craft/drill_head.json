@@ -1,9 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "G": {
-      "tag": "forge:gears/titanium"
+      "tag": "c:titanium_gears"
     },
     "R": {
       "item": "modern_industrialization:titanium_rod"
@@ -15,7 +14,7 @@
       "item": "modern_industrialization:titanium_curved_plate"
     },
     "p": {
-      "tag": "forge:plates/titanium"
+      "tag": "c:titanium_plates"
     }
   },
   "pattern": [
@@ -24,6 +23,7 @@
     "bGb"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:titanium_drill_head"
   }
 }

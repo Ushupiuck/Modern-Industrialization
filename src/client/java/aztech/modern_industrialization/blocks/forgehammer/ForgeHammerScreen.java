@@ -23,7 +23,7 @@
  */
 package aztech.modern_industrialization.blocks.forgehammer;
 
-import aztech.modern_industrialization.MI;
+import aztech.modern_industrialization.ModernIndustrialization;
 import aztech.modern_industrialization.client.screen.MIHandledScreen;
 import aztech.modern_industrialization.util.RenderHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -35,10 +35,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 public class ForgeHammerScreen extends MIHandledScreen<ForgeHammerScreenHandler> {
 
-    public static final ResourceLocation FORGE_HAMMER_GUI = MI.id("textures/gui/container/forge_hammer.png");
+    public static final ResourceLocation FORGE_HAMMER_GUI = new ResourceLocation(ModernIndustrialization.MOD_ID,
+            "textures/gui/container/forge_hammer.png");
 
     private static final int X_OFFSET = 61, Y_OFFSET = 14;
 
@@ -76,8 +79,8 @@ public class ForgeHammerScreen extends MIHandledScreen<ForgeHammerScreenHandler>
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
-    @Override
     protected void renderBg(GuiGraphics guiGraphics, float delta, int mouseX, int mouseY) {
+        this.renderBackground(guiGraphics);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(FORGE_HAMMER_GUI, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
@@ -94,7 +97,11 @@ public class ForgeHammerScreen extends MIHandledScreen<ForgeHammerScreenHandler>
             int l = i / 4;
             int m = y + l * 18 + 2;
 
-            RenderHelper.renderAndDecorateItem(guiGraphics, font, handler.getAvailableRecipes().get(i).value().result(), k, m);
+            Item item = handler.getAvailableRecipes().get(i).itemOutputs.get(0).item;
+            int amount = handler.getAvailableRecipes().get(i).itemOutputs.get(0).amount;
+
+            ItemStack stack = new ItemStack(item, amount);
+            RenderHelper.renderAndDecorateItem(guiGraphics, font, stack, k, m);
         }
 
     }
@@ -127,7 +134,11 @@ public class ForgeHammerScreen extends MIHandledScreen<ForgeHammerScreenHandler>
             int n = x1 + l % 4 * 16;
             int o = y1 + l / 4 * 18 + 2;
             if (x >= n && x < n + 16 && y >= o && y < o + 18) {
-                guiGraphics.renderTooltip(font, handler.getAvailableRecipes().get(l).value().result(), x, y);
+
+                Item item = handler.getAvailableRecipes().get(l).itemOutputs.get(0).item;
+                int amount = handler.getAvailableRecipes().get(l).itemOutputs.get(0).amount;
+                ItemStack stack = new ItemStack(item, amount);
+                guiGraphics.renderTooltip(font, stack, x, y);
             }
         }
 

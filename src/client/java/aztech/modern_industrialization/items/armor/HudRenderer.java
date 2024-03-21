@@ -25,6 +25,8 @@ package aztech.modern_industrialization.items.armor;
 
 import aztech.modern_industrialization.MIText;
 import aztech.modern_industrialization.items.FluidFuelItemHelper;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,6 +36,7 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 
+@Environment(EnvType.CLIENT)
 public class HudRenderer {
     public static void onRenderHud(GuiGraphics guiGraphics, float delta) {
         Minecraft mc = Minecraft.getInstance();

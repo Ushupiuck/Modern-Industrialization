@@ -1,9 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "d": {
-      "tag": "forge:dyes/gray"
+      "tag": "c:gray_dyes"
     },
     "p": {
       "tag": "modern_industrialization:fluid_pipes"
@@ -13,6 +12,7 @@
     "pd"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:gray_fluid_pipe"
   }
 }

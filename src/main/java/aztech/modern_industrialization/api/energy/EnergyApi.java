@@ -25,22 +25,20 @@ package aztech.modern_industrialization.api.energy;
 
 import aztech.modern_industrialization.MIConfig;
 import aztech.modern_industrialization.MIIdentifier;
-import dev.technici4n.grandpower.api.DelegatingEnergyStorage;
-import dev.technici4n.grandpower.api.ILongEnergyStorage;
-import dev.technici4n.grandpower.api.LimitingEnergyStorage;
+import net.fabricmc.fabric.api.lookup.v1.block.BlockApiLookup;
+import net.fabricmc.fabric.api.lookup.v1.item.ItemApiLookup;
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.core.Direction;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.capabilities.BlockCapability;
-import net.neoforged.neoforge.capabilities.ItemCapability;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import org.jetbrains.annotations.ApiStatus;
+import team.reborn.energy.api.EnergyStorage;
+import team.reborn.energy.api.base.DelegatingEnergyStorage;
+import team.reborn.energy.api.base.LimitingEnergyStorage;
 
 public class EnergyApi {
-    public static final BlockCapability<MIEnergyStorage, Direction> SIDED = BlockCapability
-            .createSided(new MIIdentifier("sided_mi_energy_storage"), MIEnergyStorage.class);
-    public static final ItemCapability<ILongEnergyStorage, Void> ITEM = ItemCapability
-            .createVoid(new MIIdentifier("energy_storage"), ILongEnergyStorage.class);
+    public static final BlockApiLookup<MIEnergyStorage, Direction> SIDED = BlockApiLookup
+            .get(new MIIdentifier("sided_mi_energy_storage"), MIEnergyStorage.class, Direction.class);
+    public static final ItemApiLookup<EnergyStorage, ContainerItemContext> ITEM = ItemApiLookup
+            .get(new MIIdentifier("energy_storage"), EnergyStorage.class, ContainerItemContext.class);
 
     private static final ThreadLocal<Boolean> IN_COMPAT = ThreadLocal.withInitial(() -> false);
 
@@ -51,13 +49,8 @@ public class EnergyApi {
         }
 
         @Override
-        public long extract(long maxAmount, boolean simulate) {
+        public long extract(long maxAmount, TransactionContext transaction) {
             return maxAmount;
-        }
-
-        @Override
-        public boolean canExtract() {
-            return true;
         }
 
         @Override
@@ -90,108 +83,102 @@ public class EnergyApi {
         }
     }
 
-    @ApiStatus.Internal
-    public static void init(RegisterCapabilitiesEvent event, Block[] allBlocks, Item[] allItems) {
+    static {
         // Compat wrapper for TR energy
         if (MIConfig.getConfig().enableBidirectionalEnergyCompat) {
-            event.registerBlock(ILongEnergyStorage.BLOCK, (world, pos, state, blockEntity, context) -> {
+            EnergyStorage.SIDED.registerFallback((world, pos, state, blockEntity, context) -> {
                 if (IN_COMPAT.get()) {
                     return null;
                 }
 
                 IN_COMPAT.set(true);
                 try {
-                    return world.getCapability(SIDED, pos, state, blockEntity, context);
+                    return SIDED.find(world, pos, state, blockEntity, context);
                 } finally {
                     IN_COMPAT.set(false);
                 }
-            }, allBlocks);
-            event.registerBlock(SIDED, (world, pos, state, blockEntity, context) -> {
+            });
+            SIDED.registerFallback((world, pos, state, blockEntity, context) -> {
                 if (IN_COMPAT.get()) {
                     return null;
                 }
 
                 IN_COMPAT.set(true);
                 try {
-                    var trStorage = world.getCapability(ILongEnergyStorage.BLOCK, pos, state, blockEntity, context);
+                    EnergyStorage trStorage = EnergyStorage.SIDED.find(world, pos, state, blockEntity, context);
                     return trStorage == null ? null : new WrappedTrStorage(trStorage);
                 } finally {
                     IN_COMPAT.set(false);
                 }
-            }, allBlocks);
+            });
 
-            event.registerItem(ILongEnergyStorage.ITEM, (stack, ignored) -> {
+            EnergyStorage.ITEM.registerFallback((stack, ctx) -> {
                 if (IN_COMPAT.get()) {
                     return null;
                 }
 
                 IN_COMPAT.set(true);
                 try {
-                    return stack.getCapability(ITEM);
+                    return ITEM.find(stack, ctx);
                 } finally {
                     IN_COMPAT.set(false);
                 }
-            }, allItems);
-            event.registerItem(ITEM, (stack, ctx) -> {
+            });
+            ITEM.registerFallback((stack, ctx) -> {
                 if (IN_COMPAT.get()) {
                     return null;
                 }
 
                 IN_COMPAT.set(true);
                 try {
-                    return stack.getCapability(ILongEnergyStorage.ITEM);
+                    return EnergyStorage.ITEM.find(stack, ctx);
                 } finally {
                     IN_COMPAT.set(false);
                 }
-            }, allItems);
+            });
         } else {
-            event.registerBlock(SIDED, (world, pos, state, blockEntity, context) -> {
-                var trStorage = world.getCapability(ILongEnergyStorage.BLOCK, pos, state, blockEntity, context);
-                return trStorage == null || !trStorage.canReceive() ? null : new InsertOnlyTrStorage(trStorage);
-            }, allBlocks);
-            event.registerItem(ITEM, (stack, ctx) -> {
+            SIDED.registerFallback((world, pos, state, blockEntity, context) -> {
+                EnergyStorage trStorage = EnergyStorage.SIDED.find(world, pos, state, blockEntity, context);
+                return trStorage == null || !trStorage.supportsInsertion() ? null : new InsertOnlyTrStorage(trStorage);
+            });
+            ITEM.registerFallback((stack, ctx) -> {
                 if (IN_COMPAT.get()) {
                     return null;
                 }
 
                 IN_COMPAT.set(true);
                 try {
-                    var trStorage = stack.getCapability(ILongEnergyStorage.ITEM);
-                    return trStorage == null || !trStorage.canReceive() ? null : new LimitingEnergyStorage(trStorage, Long.MAX_VALUE, 0);
+                    EnergyStorage trStorage = EnergyStorage.ITEM.find(stack, ctx);
+                    return trStorage == null || !trStorage.supportsInsertion() ? null : new LimitingEnergyStorage(trStorage, Long.MAX_VALUE, 0);
                 } finally {
                     IN_COMPAT.set(false);
                 }
-            }, allItems);
-            event.registerItem(ILongEnergyStorage.ITEM, (stack, ctx) -> {
+            });
+            EnergyStorage.ITEM.registerFallback((stack, ctx) -> {
                 if (IN_COMPAT.get()) {
                     return null;
                 }
 
                 IN_COMPAT.set(true);
                 try {
-                    var miStorage = stack.getCapability(ITEM);
-                    return miStorage == null || !miStorage.canExtract() ? null : new LimitingEnergyStorage(miStorage, 0, Long.MAX_VALUE);
+                    EnergyStorage miStorage = ITEM.find(stack, ctx);
+                    return miStorage == null || !miStorage.supportsExtraction() ? null : new LimitingEnergyStorage(miStorage, 0, Long.MAX_VALUE);
                 } finally {
                     IN_COMPAT.set(false);
                 }
-            }, allItems);
+            });
         }
     }
 
-    private record InsertOnlyTrStorage(ILongEnergyStorage trStorage) implements MIEnergyStorage.NoExtract {
+    private record InsertOnlyTrStorage(EnergyStorage trStorage) implements MIEnergyStorage.NoExtract {
         @Override
         public boolean canConnect(CableTier cableTier) {
             return true;
         }
 
         @Override
-        public long receive(long maxAmount, boolean simulate) {
-            return trStorage.receive(maxAmount, simulate);
-        }
-
-        @Override
-        public boolean canReceive() {
-            return trStorage.canReceive();
+        public long insert(long maxAmount, TransactionContext transaction) {
+            return trStorage.insert(maxAmount, transaction);
         }
 
         @Override
@@ -206,8 +193,8 @@ public class EnergyApi {
     }
 
     private static class WrappedTrStorage extends DelegatingEnergyStorage implements MIEnergyStorage {
-        public WrappedTrStorage(ILongEnergyStorage backingStorage) {
-            super(backingStorage);
+        public WrappedTrStorage(EnergyStorage backingStorage) {
+            super(backingStorage, null);
         }
 
         @Override

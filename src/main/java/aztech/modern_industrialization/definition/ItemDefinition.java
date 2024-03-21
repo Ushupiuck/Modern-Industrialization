@@ -26,23 +26,22 @@ package aztech.modern_industrialization.definition;
 import aztech.modern_industrialization.items.SortOrder;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import net.minecraft.data.models.ItemModelGenerators;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
-import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
-import net.neoforged.neoforge.registries.DeferredItem;
 
 public class ItemDefinition<T extends Item> extends Definition implements ItemLike {
 
-    private final DeferredItem<T> item;
+    private final T item;
     public final SortOrder sortOrder;
 
-    public final BiConsumer<Item, ItemModelProvider> modelGenerator;
+    public final BiConsumer<Item, ItemModelGenerators> modelGenerator;
     private Consumer<? super T> onItemRegistrationEvent;
 
-    public ItemDefinition(String englishName, DeferredItem<T> item,
-            BiConsumer<Item, ItemModelProvider> modelGenerator, SortOrder sortOrder) {
-        super(englishName, item.getId().getPath());
+    public ItemDefinition(String englishName, String id, T item,
+            BiConsumer<Item, ItemModelGenerators> modelGenerator, SortOrder sortOrder) {
+        super(englishName, id);
         this.item = item;
         this.modelGenerator = modelGenerator;
         this.onItemRegistrationEvent = null;
@@ -56,7 +55,7 @@ public class ItemDefinition<T extends Item> extends Definition implements ItemLi
 
     public void onRegister() {
         if (this.onItemRegistrationEvent != null) {
-            this.onItemRegistrationEvent.accept(item.get());
+            this.onItemRegistrationEvent.accept(item);
         }
     }
 
@@ -65,7 +64,7 @@ public class ItemDefinition<T extends Item> extends Definition implements ItemLi
     }
 
     public ItemStack stack(int stackSize) {
-        return new ItemStack(item.get(), stackSize);
+        return new ItemStack(item, stackSize);
     }
 
     public boolean is(ItemStack stack) {
@@ -74,12 +73,12 @@ public class ItemDefinition<T extends Item> extends Definition implements ItemLi
 
     @Override
     public T asItem() {
-        return item.get();
+        return item;
     }
 
     @Override
     public String getTranslationKey() {
-        return item.get().getDescriptionId();
+        return item.getDescriptionId();
     }
 
 }

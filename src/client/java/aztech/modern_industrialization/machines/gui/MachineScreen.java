@@ -29,23 +29,25 @@ import aztech.modern_industrialization.client.DynamicTooltip;
 import aztech.modern_industrialization.client.screen.MIHandledScreen;
 import aztech.modern_industrialization.inventory.BackgroundRenderedSlot;
 import aztech.modern_industrialization.inventory.ConfigurableFluidStack;
+import aztech.modern_industrialization.inventory.ConfigurableInventoryPackets;
 import aztech.modern_industrialization.inventory.ConfigurableItemStack;
-import aztech.modern_industrialization.network.machines.AdjustSlotCapacityPacket;
-import aztech.modern_industrialization.network.machines.LockAllPacket;
-import aztech.modern_industrialization.network.machines.SetLockingModePacket;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.fluid.FluidVariant;
 import aztech.modern_industrialization.util.FluidHelper;
 import aztech.modern_industrialization.util.Rectangle;
 import aztech.modern_industrialization.util.RenderHelper;
 import aztech.modern_industrialization.util.TextHelper;
+import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -157,11 +159,17 @@ public class MachineScreen extends MIHandledScreen<MachineMenuClient> implements
             if (hasShiftDown()) {
                 boolean lock = menu.hasUnlockedSlot();
                 menu.lockAll(lock);
-                new LockAllPacket(syncId, lock).sendToServer();
+                FriendlyByteBuf buf = PacketByteBufs.create();
+                buf.writeInt(syncId);
+                buf.writeBoolean(lock);
+                ClientPlayNetworking.send(ConfigurableInventoryPackets.LOCK_ALL, buf);
             } else {
                 boolean newLockingMode = !menu.lockingMode;
                 menu.lockingMode = newLockingMode;
-                new SetLockingModePacket(syncId, newLockingMode).sendToServer();
+                FriendlyByteBuf buf = PacketByteBufs.create();
+                buf.writeInt(syncId);
+                buf.writeBoolean(newLockingMode);
+                ClientPlayNetworking.send(ConfigurableInventoryPackets.SET_LOCKING_MODE, buf);
             }
         }, () -> {
             List<Component> lines = new ArrayList<>();
@@ -186,7 +194,16 @@ public class MachineScreen extends MIHandledScreen<MachineMenuClient> implements
             }
         }
 
-        // Normal render - handles background and slots
+        // Shadow around the GUI
+        renderBackground(guiGraphics);
+        RenderSystem.enableBlend();
+        // Background
+        actualDrawBackground(guiGraphics);
+        renderConfigurableSlotBackgrounds(guiGraphics);
+        // Locked items and fluids
+        renderFluidSlots(guiGraphics, mouseX, mouseY);
+        renderLockedItems(guiGraphics);
+        // Regular items and the foreground
         super.render(guiGraphics, mouseX, mouseY, delta);
         // Tooltips
         renderConfigurableSlotTooltips(guiGraphics, mouseX, mouseY);
@@ -195,8 +212,9 @@ public class MachineScreen extends MIHandledScreen<MachineMenuClient> implements
         }
     }
 
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float delta, int mouseX, int mouseY) {
+    // drawBackground() is called too late, so it's not used at all.
+    // This function is used by our custom render() function when appropriate.
+    private void actualDrawBackground(GuiGraphics guiGraphics) {
         int bw = menu.guiParams.backgroundWidth;
         int bh = menu.guiParams.backgroundHeight;
         guiGraphics.blit(BACKGROUND, leftPos, topPos + 4, 0, 256 - bh + 4, bw, bh - 4);
@@ -205,8 +223,6 @@ public class MachineScreen extends MIHandledScreen<MachineMenuClient> implements
         for (ClientComponentRenderer renderer : renderers) {
             renderer.renderBackground(guiGraphics, leftPos, topPos);
         }
-
-        renderConfigurableSlotBackgrounds(guiGraphics);
     }
 
     private void renderConfigurableSlotBackgrounds(GuiGraphics guiGraphics) {
@@ -219,34 +235,49 @@ public class MachineScreen extends MIHandledScreen<MachineMenuClient> implements
         }
     }
 
-    @Override
-    protected void renderSlot(GuiGraphics guiGraphics, Slot slot) {
-        if (slot instanceof ConfigurableFluidStack.ConfigurableFluidSlot cfs) {
-            ConfigurableFluidStack stack = cfs.getConfStack();
-            FluidVariant renderedKey = stack.getLockedInstance() == null ? stack.getResource() : FluidVariant.of(stack.getLockedInstance());
-            if (!renderedKey.isBlank()) {
-                RenderHelper.drawFluidInGui(guiGraphics, renderedKey, slot.x, slot.y);
-            }
-            return;
-        }
+    private void renderFluidSlots(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        for (Slot slot : menu.slots) {
+            if (slot instanceof ConfigurableFluidStack.ConfigurableFluidSlot) {
+                int i = leftPos + slot.x;
+                int j = topPos + slot.y;
 
-        if (slot instanceof ConfigurableItemStack.ConfigurableItemSlot itemSlot) {
-            ConfigurableItemStack itemStack = itemSlot.getConfStack();
-            if ((itemStack.isPlayerLocked() || itemStack.isMachineLocked()) && itemStack.getResource().isBlank()) {
-                Item item = itemStack.getLockedInstance();
-                if (item != Items.AIR) {
-                    RenderHelper.renderAndDecorateItem(guiGraphics, font, new ItemStack(item), slot.x, slot.y, "0");
+                ConfigurableFluidStack stack = ((ConfigurableFluidStack.ConfigurableFluidSlot) slot).getConfStack();
+                FluidVariant renderedKey = stack.getLockedInstance() == null ? stack.getResource() : FluidVariant.of(stack.getLockedInstance());
+                if (!renderedKey.isBlank()) {
+                    RenderHelper.drawFluidInGui(guiGraphics, renderedKey, i, j);
+                }
+
+                if (isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY) && slot.isActive()) {
+                    this.hoveredSlot = slot;
+                    RenderSystem.disableDepthTest();
+                    RenderSystem.colorMask(true, true, true, false);
+                    guiGraphics.fillGradient(i, j, i + 16, j + 16, -2130706433, -2130706433);
+                    RenderSystem.colorMask(true, true, true, true);
+                    RenderSystem.enableDepthTest();
                 }
             }
         }
-        super.renderSlot(guiGraphics, slot);
+    }
+
+    private void renderLockedItems(GuiGraphics guiGraphics) {
+        for (Slot slot : this.menu.slots) {
+            if (slot instanceof ConfigurableItemStack.ConfigurableItemSlot itemSlot) {
+                ConfigurableItemStack itemStack = itemSlot.getConfStack();
+                if ((itemStack.isPlayerLocked() || itemStack.isMachineLocked()) && itemStack.getResource().isBlank()) {
+                    Item item = itemStack.getLockedInstance();
+                    if (item != Items.AIR) {
+                        RenderHelper.renderAndDecorateItem(guiGraphics, font, new ItemStack(item), slot.x + this.leftPos, slot.y + this.topPos, "0");
+                    }
+                }
+            }
+        }
     }
 
     private void renderConfigurableSlotTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         Slot slot = hoveredSlot;
         if (slot instanceof ConfigurableFluidStack.ConfigurableFluidSlot) {
             ConfigurableFluidStack stack = ((ConfigurableFluidStack.ConfigurableFluidSlot) slot).getConfStack();
-            FluidVariant renderedKey = stack.getLockedInstance() != null ? FluidVariant.of(stack.getLockedInstance()) : stack.getResource();
+            FluidVariant renderedKey = stack.isPlayerLocked() ? FluidVariant.of(stack.getLockedInstance()) : stack.getResource();
             List<Component> tooltip = new ArrayList<>(
                     FluidHelper.getTooltipForFluidStorage(renderedKey, stack.getAmount(), stack.getCapacity(), false));
 
@@ -291,16 +322,24 @@ public class MachineScreen extends MIHandledScreen<MachineMenuClient> implements
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amountX, double amountY) {
+    protected void renderBg(GuiGraphics guiGraphics, float delta, int mouseX, int mouseY) {
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         if (hoveredSlot instanceof ConfigurableItemStack.ConfigurableItemSlot confSlot) {
             ConfigurableItemStack stack = confSlot.getConfStack();
-            boolean isIncrease = amountY > 0;
+            boolean isIncrease = amount > 0;
             boolean isShiftDown = hasShiftDown();
             // Client side update
             stack.adjustCapacity(isIncrease, isShiftDown);
             // Server side update
-            new AdjustSlotCapacityPacket(menu.containerId, menu.slots.indexOf(hoveredSlot), isIncrease, isShiftDown)
-                    .sendToServer();
+            FriendlyByteBuf buf = PacketByteBufs.create();
+            buf.writeInt(menu.containerId);
+            buf.writeVarInt(menu.slots.indexOf(hoveredSlot));
+            buf.writeBoolean(isIncrease);
+            buf.writeBoolean(isShiftDown);
+            ClientPlayNetworking.send(ConfigurableInventoryPackets.ADJUST_SLOT_CAPACITY, buf);
             return true;
         }
         return false;

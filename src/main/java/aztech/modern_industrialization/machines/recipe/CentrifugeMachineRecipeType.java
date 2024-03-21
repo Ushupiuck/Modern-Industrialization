@@ -38,7 +38,7 @@ public class CentrifugeMachineRecipeType extends ProxyableMachineRecipeType {
         recipeList.addAll(getManagerRecipes(world));
 
         for (var itemCompostable : ComposterBlock.COMPOSTABLES.keySet()) {
-            var recipe = RecipeConversions.ofCompostable(itemCompostable);
+            MachineRecipe recipe = RecipeConversions.ofCompostable(itemCompostable);
             if (recipe != null) {
                 recipeList.add(recipe);
             }

@@ -66,7 +66,7 @@ public class CasingComponent implements IComponent, DropableComponent {
     }
 
     @Override
-    public void readNbt(CompoundTag tag, boolean isUpgradingMachine) {
+    public void readNbt(CompoundTag tag) {
         // legacy saving by CableTier name
         // TODO 1.21: remove
         if (tag.contains("casing", Tag.TAG_STRING)) {

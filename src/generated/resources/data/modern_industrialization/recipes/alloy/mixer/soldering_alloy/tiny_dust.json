@@ -5,11 +5,11 @@
   "item_inputs": [
     {
       "amount": 1,
-      "tag": "forge:tiny_dusts/tin"
+      "tag": "c:tin_tiny_dusts"
     },
     {
       "amount": 1,
-      "tag": "forge:tiny_dusts/lead"
+      "tag": "c:lead_tiny_dusts"
     }
   ],
   "item_outputs": [

@@ -1,35 +1,20 @@
 plugins {
-    id 'java-library'
-    id 'eclipse'
-    id 'idea'
+    id 'fabric-loom' version '1.3-SNAPSHOT'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.0.81'
     id 'com.diffplug.spotless' version '5.14.0'
     id 'com.matthewprenger.cursegradle' version '1.4.0'
     id "com.modrinth.minotaur" version "2.+"
+    id 'io.github.juuxel.loom-quiltflower' version '1.10.0'
 }
+
+apply plugin: 'java-library'
 
 version = System.getenv("MI_VERSION")
         ? System.getenv("MI_VERSION")
-        : "0.0.0-local"
-group = "aztech"
-base {
-    archivesName = "Modern-Industrialization"
-}
-
-logger.lifecycle("Modern Industrialization version ${version}")
+        : "local"
 
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-        vendor = JvmVendorSpec.matching("jetbrains")
-    }
-
-    withSourcesJar()
-}
 
 repositories {
     // for KJS
@@ -43,13 +28,20 @@ repositories {
     maven {
         url 'https://maven.blamejared.com'
     }
+    // for WTHIT
+    maven {
+        url "https://maven2.bai.lol"
+        content {
+            includeGroup "lol.bai"
+            includeGroup "mcp.mobius.waila"
+        }
+    }
     // for AE2 and JEI
     maven {
         name "Modmaven"
         url "https://modmaven.dev"
         content {
             includeGroup "appeng"
-            includeGroup "dev.technici4n"
             includeGroup "mezz.jei"
         }
     }
@@ -109,10 +101,20 @@ repositories {
             includeGroup "dev.ftb.mods"
         }
     }
+    // for reach entity attributes, required by Magna
     maven {
-        url "https://maven.ftb.dev/snapshots"
+        url = "https://maven.jamieswhiteshirt.com/libs-release/"
         content {
-            includeGroup "dev.ftb.mods"
+            includeGroup "com.jamieswhiteshirt"
+        }
+    }
+    // for PlayerAbilityLib
+    maven {
+        name = 'Ladysnake Mods'
+        url = 'https://maven.ladysnake.org/releases'
+        content {
+            includeGroup 'io.github.ladysnake'
+            includeGroupByRegex 'io\\.github\\.onyxstudios.*'
         }
     }
     maven {
@@ -145,197 +147,185 @@ repositories {
             includeGroup "dev.ftb.mods"
         }
     }
-    maven {
-        url "https://maven.teamresourceful.com/repository/maven-public/"
-        content {
-            includeGroup "com.teamresourceful"
-            includeGroup "com.teamresourceful.resourcefullib"
-            includeGroup "earth.terrarium.argonauts"
-            includeGroup "earth.terrarium.athena"
+    repositories {
+        maven {
+            url = "https://maven.draylar.dev/releases"
+            content {
+                includeGroup "dev.draylar"
+            }
         }
     }
     mavenLocal()
-}
 
-sourceSets {
-    main {
-        java {
-            srcDir "src/main"
-        }
-        resources {
-            srcDir "src/generated/resources"
-        }
-        runs {
-            modIdentifier "modern_industrialization"
-        }
-    }
-    client {
-        runs {
-            modIdentifier "modern_industrialization"
-        }
-        compileClasspath += sourceSets.main.compileClasspath
-        runtimeClasspath += sourceSets.main.runtimeClasspath
-        compileClasspath += sourceSets.main.output
-        runtimeClasspath += sourceSets.main.output
-    }
 }
 
 dependencies {
-    implementation "net.neoforged:neoforge:${project.neo_version}"
-
-    api jarJar("dev.technici4n:GrandPower:${project.grandpower_version}") {
-        jarJar.ranged(it, "[$project.grandpower_version,)")
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${project.parchment_minecraft_version}:${project.parchment_version}@zip")
     }
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Dependencies
 
     if (project.runtime_itemlist_mod == "jei") {
-        implementation "mezz.jei:jei-${project.jei_minecraft_version}-neoforge:${project.jei_version}"
+        modImplementation("mezz.jei:jei-${project.jei_minecraft_version}-fabric:${project.jei_version}") {
+            exclude group: "mezz.jei"
+        }
     } else {
-        compileOnly "mezz.jei:jei-${project.jei_minecraft_version}-neoforge:${project.jei_version}"
+        modCompileOnly("mezz.jei:jei-${project.jei_minecraft_version}-fabric:${project.jei_version}") {
+            exclude group: "mezz.jei"
+        }
     }
 
     if (project.runtime_itemlist_mod == "rei") {
-        implementation "me.shedaniel:RoughlyEnoughItems-neoforge:${project.rei_version}"
+        modImplementation("me.shedaniel:RoughlyEnoughItems-fabric:${project.rei_version}") {
+            exclude(group: "net.fabricmc.fabric-api")
+        }
     } else {
-        compileOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${project.rei_version}"
+        modCompileOnly("me.shedaniel:RoughlyEnoughItems-fabric:${project.rei_version}") {
+            exclude group: "net.fabricmc.fabric-api"
+        }
     }
-    compileOnly "me.shedaniel:REIPluginCompatibilities-forge-annotations:${project.rei_annotations_version}"
 
     if (project.runtime_itemlist_mod == "emi") {
-        implementation "dev.emi:emi-neoforge:${project.emi_version}+${project.emi_minecraft_version}"
-        // Add JEI so that we can use EMI's builtin compat layer
-        runtimeOnly "mezz.jei:jei-${project.jei_minecraft_version}-neoforge:${project.jei_version}"
+        modImplementation("dev.emi:emi-fabric:${project.emi_version}+${project.emi_minecraft_version}") {
+            exclude group: "net.fabricmc.fabric-api"
+        }
     } else {
-        compileOnly "dev.emi:emi-neoforge:${project.emi_version}+${project.emi_minecraft_version}"
+        modCompileOnly("dev.emi:emi-fabric:${project.emi_version}+${project.emi_minecraft_version}") {
+            exclude group: "net.fabricmc.fabric-api"
+        }
     }
 
     if (!(project.runtime_itemlist_mod in ["jei", "rei", "emi"])) {
         throw new GradleException("Invalid runtime_itemlist_mod value: " + project.runtime_itemlist_mod)
     }
 
-    compileOnly "vazkii.patchouli:Patchouli:${project.patchouli_version}:api"
-    runtimeOnly "vazkii.patchouli:Patchouli:${project.patchouli_version}"
-    jarJar("vazkii.patchouli:Patchouli:${project.patchouli_version}") {
-        jarJar.ranged(it, "[$project.patchouli_version,)")
+    include modImplementation("vazkii.patchouli:Patchouli:${project.patchouli_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
     }
 
-    implementation("me.shedaniel.cloth:cloth-config-neoforge:${project.cloth_config_version}")
+    modImplementation("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
 
-    implementation("curse.maven:jade-324717:${project.jade_file_id}")
+    modCompileOnly "mcp.mobius.waila:wthit-api:fabric-${project.wthit_version}"
+    modRuntimeOnly "mcp.mobius.waila:wthit:fabric-${project.wthit_version}"
+    modRuntimeOnly "lol.bai:badpackets:fabric-${project.badpackets_version}"
 
-//    modImplementation("dev.latvian.mods:kubejs-fabric:${project.kubejs_version}") {
+    modImplementation("com.terraformersmc:modmenu:${project.mod_menu_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
+
+    modImplementation("dev.latvian.mods:kubejs-fabric:${project.kubejs_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
+
+    include modImplementation("dev.draylar:magna:${project.magna_version}") {
+        exclude(group: "io.github.prospector")
+        exclude(group: "me.shedaniel.cloth")
+        exclude(group: "net.fabricmc.fabric-api")
+    }
+
+    include modApi("teamreborn:energy:${project.tr_energy_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+        exclude group: "net.fabricmc", module: "fabric-loader"
+    }
+
+    include modImplementation("io.github.ladysnake:PlayerAbilityLib:${project.pal_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
+
+    // Include No Indium? https://github.com/Luligabi1/NoIndium
+    include "me.luligabi:NoIndium:${project.no_indium_version}"
+
+    modImplementation("appeng:appliedenergistics2-fabric:${project.ae2_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+        exclude(group: "me.shedaniel")
+    }
+
+    // TODO 1.20: FTB stuff
+//    modCompileOnly("dev.ftb.mods:ftb-quests-fabric:${project.ftb_quests_version}") {
 //        exclude(group: "net.fabricmc.fabric-api")
+//        exclude(group: "me.shedaniel")
 //    }
-
-    implementation "appeng:appliedenergistics2-neoforge:${project.ae2_version}"
-    implementation "earth.terrarium.argonauts:argonauts-neoforge-${project.minecraft_version}:${project.argonauts_version}"
-    implementation "earth.terrarium.athena:athena-neoforge-${project.minecraft_version}:${project.athena_version}"
-
-//    // TODO 1.20: FTB stuff
-////    modCompileOnly("dev.ftb.mods:ftb-quests-fabric:${project.ftb_quests_version}") {
-////        exclude(group: "net.fabricmc.fabric-api")
-////        exclude(group: "me.shedaniel")
-////    }
-    compileOnly "dev.ftb.mods:ftb-teams-neoforge:${project.ftb_teams_version}"
+    modImplementation("dev.ftb.mods:ftb-teams-fabric:${project.ftb_teams_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+        exclude(group: "me.shedaniel")
+    }
 }
 
-minecraft.accessTransformers.file file("src/main/resources/META-INF/accesstransformer.cfg")
+configurations {
+    // due to a change in newer loom, loader isn't remapped
+    // except some mods pull in an older version of loader that *is* remapped
+    // so it has to be excluded explicitly.
 
-runs {
-    // applies to all the run configs below
-    configureEach {
-        // Recommended logging data for a userdev environment
-        // The markers can be added/remove as needed separated by commas.
-        // "SCAN": For mods scan.
-        // "REGISTRIES": For firing of registry events.
-        // "REGISTRYDUMP": For getting the contents of all registries.
-        systemProperty 'forge.logging.markers', 'REGISTRIES'
+    modRuntimeOnly.exclude group: "net.fabricmc", module: "fabric-loader"
+}
 
-        // Recommended logging level for the console
-        // You can set various levels here.
-        // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-        systemProperty 'forge.logging.console.level', 'debug'
-
-        modSource project.sourceSets.main
-        modSource project.sourceSets.client
-
-        jvmArgument "-XX:+AllowEnhancedClassRedefinition"
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
     }
 
-    client {
-        // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-        systemProperty 'forge.enabledGameTestNamespaces', "modern_industrialization"
-    }
-
-    server {
-        systemProperty 'forge.enabledGameTestNamespaces', "modern_industrialization"
-        programArgument '--nogui'
-    }
-
-    // This run config launches GameTestServer and runs all registered gametests, then exits.
-    // By default, the server will crash when no gametests are provided.
-    // The gametest system is also enabled by default for other run configs under the /test command.
-    gameTestServer {
-        systemProperty 'forge.enabledGameTestNamespaces', "modern_industrialization"
-    }
-
-    data {
-        // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
-        // workingDirectory project.file('run-data')
-
-        // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-        programArguments.addAll '--mod', "modern_industrialization", '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
-    }
-
-    autotestServer {
-        configure 'server'
-        systemProperty 'modern_industrialization.autoTest', 'true'
-    }
+    withSourcesJar()
 }
 
 processResources {
-    var replaceProperties = [
-            neo_version: neo_version,
-            neo_version_range: neo_version_range,
-            mod_version: version,
-            grandpower_version_range: grandpower_version_range,
-    ]
-    inputs.properties replaceProperties
+    inputs.property "version", project.version
 
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
-        expand replaceProperties + [project: project]
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
     }
 }
 
-//loom {
-//    accessWidenerPath = file("src/main/resources/modern_industrialization.accesswidener")
-//    mods {
-//        moderndynamics {
-//            sourceSet sourceSets.main
-//            sourceSet sourceSets.client
-//        }
-//    }
-//    runs {
-//        autoTestServer {
-//            server()
-//            name = "Autotest Server"
-//            vmArg "-Dmodern_industrialization.autoTest"
-//
-//            ideConfigGenerated = true
-//        }
-//        datagenClient {
-//            client()
-//            name "Data Generation"
-//            vmArg "-Dfabric-api.datagen"
-//            vmArg "-Dfabric-api.datagen.modid=modern_industrialization"
-//            vmArg "-Dfabric-api.datagen.output-dir=${file("src/generated/resources")}"
-//            vmArg "-Dfabric-api.datagen.strict-validation=true"
-//
-//            ideConfigGenerated = true
-//            runDir "build/datagen"
-//            source sourceSets.client
-//        }
-//    }
-//}
+sourceSets {
+    main {
+        java {
+            srcDir "src/main"
+            exclude "**/compat/dashloader/**"
+        }
+        resources {
+            srcDir "src/generated/resources"
+        }
+    }
+}
+
+loom {
+    splitEnvironmentSourceSets()
+
+    accessWidenerPath = file("src/main/resources/modern_industrialization.accesswidener")
+    mods {
+        moderndynamics {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+    runs {
+        autoTestServer {
+            server()
+            name = "Autotest Server"
+            vmArg "-Dmodern_industrialization.autoTest"
+
+            ideConfigGenerated = true
+        }
+        datagenClient {
+            client()
+            name "Data Generation"
+            vmArg "-Dfabric-api.datagen"
+            vmArg "-Dfabric-api.datagen.modid=modern_industrialization"
+            vmArg "-Dfabric-api.datagen.output-dir=${file("src/generated/resources")}"
+            vmArg "-Dfabric-api.datagen.strict-validation=true"
+
+            ideConfigGenerated = true
+            runDir "build/datagen"
+            source sourceSets.client
+        }
+    }
+}
 
 tasks.withType(JavaCompile).configureEach {
     // ensure that the encoding is set to UTF-8, no matter what the system default is
@@ -343,16 +333,13 @@ tasks.withType(JavaCompile).configureEach {
     // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
     // If Javadoc is generated, this must be specified in that task too.
     it.options.encoding = "UTF-8"
+
+    // Minecraft 1.17 (21w19a) upwards uses Java 16.
+    it.options.release = 17
 }
 
 jar {
     from "LICENSE"
-    from sourceSets.client.output
-}
-
-tasks.named("jarJar") {
-    from "LICENSE"
-    from sourceSets.client.output
 }
 
 // configure the maven publication
@@ -365,14 +352,8 @@ publishing {
 
     // select the repositories you want to publish to
     repositories {
-        maven {
-            credentials {
-                username = System.getenv("MODMAVEN_USER")
-                password = System.getenv("MODMAVEN_PASSWORD")
-            }
-            name = "modmaven"
-            url = "https://modmaven.dev/artifactory/local-releases/"
-        }
+        // uncomment to publish to the local maven
+        // mavenLocal()
     }
 }
 
@@ -454,20 +435,22 @@ if (System.getenv("CURSEFORGE_API_KEY") && !version.endsWith("-SNAPSHOT")) {
             changelogType = "markdown"
             delegate.changelog = changelog
 
-            addGameVersion "1.20.4"
-            addGameVersion "NeoForge"
+            addGameVersion "1.20.1"
+            addGameVersion "Fabric"
             addGameVersion "Java 17"
 
             relations {
+                requiredDependency "fabric-api"
                 requiredDependency "cloth-config"
                 optionalDependency "wthit"
                 optionalDependency "emi"
                 optionalDependency "jei"
                 optionalDependency "roughly-enough-items"
-                embeddedLibrary "grandpower"
-                embeddedLibrary "patchouli"
+                embeddedLibrary "no-indium"
+                embeddedLibrary "patchouli-fabric"
+                embeddedLibrary "pal"
             }
-            mainArtifact(tasks.named("jarJar").flatMap { it.archiveFile }) {
+            mainArtifact(remapJar.archiveFile) {
                 displayName = "Modern Industrialization v${version}"
             }
         }
@@ -475,10 +458,11 @@ if (System.getenv("CURSEFORGE_API_KEY") && !version.endsWith("-SNAPSHOT")) {
             forgeGradleIntegration = false
         }
         afterEvaluate {
-            tasks.getByName("curseforge${project.curseforge_project}").dependsOn tasks.jarJar
+            tasks.getByName("curseforge${project.curseforge_project}").dependsOn remapJar
         }
     }
 }
+
 
 modrinth {
     token = System.getenv("MODRINTH_API_KEY")
@@ -487,16 +471,19 @@ modrinth {
     versionName = "Modern Industrialization v${version}"
     delegate.changelog = changelog
     versionType = releaseChannel
-    uploadFile = tasks.jarJar
-    gameVersions = ["1.20.4"]
-    loaders = ["neoforge"]
+    uploadFile = remapJar
+    gameVersions = ["1.20.1"]
+    loaders = ["fabric"]
     dependencies {
+        required.project "fabric-api"
         required.project "cloth-config"
         optional.project "wthit"
         optional.project "emi"
         optional.project "jei"
         optional.project "rei"
+        embedded.project "no-indium"
         embedded.project "patchouli"
+        // add "pal" (PlayerAbilityLib) when its on modrinth
     }
 }
 tasks.modrinth.onlyIf {

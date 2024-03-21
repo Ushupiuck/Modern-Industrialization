@@ -1,9 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "x": {
-      "tag": "forge:raw_materials/uranium"
+      "tag": "c:raw_uranium_ores"
     },
     "y": {
       "item": "modern_industrialization:raw_uranium"
@@ -15,6 +14,7 @@
     "xxx"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:raw_uranium_block"
   }
 }

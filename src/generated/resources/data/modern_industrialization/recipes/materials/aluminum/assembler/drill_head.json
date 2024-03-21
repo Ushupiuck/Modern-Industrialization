@@ -11,7 +11,7 @@
   "item_inputs": [
     {
       "amount": 1,
-      "tag": "forge:plates/aluminum"
+      "tag": "c:aluminum_plates"
     },
     {
       "amount": 2,
@@ -23,7 +23,7 @@
     },
     {
       "amount": 2,
-      "tag": "forge:gears/aluminum"
+      "tag": "c:aluminum_gears"
     }
   ],
   "item_outputs": [

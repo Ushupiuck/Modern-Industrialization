@@ -23,19 +23,20 @@
  */
 package aztech.modern_industrialization.pipes.fluid;
 
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 
 /**
  * A target to be used during a transfer operation.
  */
 class FluidTarget {
     final int priority;
-    final IFluidHandler storage;
+    final Storage<FluidVariant> storage;
 
     // A temporary value used to sort fluid targets
     long simulationResult;
 
-    public FluidTarget(int priority, IFluidHandler storage) {
+    public FluidTarget(int priority, Storage<FluidVariant> storage) {
         this.priority = priority;
         this.storage = storage;
     }

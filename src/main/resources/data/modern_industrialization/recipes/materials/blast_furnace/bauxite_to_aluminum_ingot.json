@@ -3,7 +3,7 @@
   "eu": 32,
   "duration": 2000,
   "item_inputs": {
-    "tag": "forge:storage_blocks/bauxite",
+    "tag": "c:bauxite_blocks",
     "amount": 1
   },
   "item_outputs": {

@@ -7,10 +7,10 @@
   ],
   "key": {
     "A" : {
-      "tag": "forge:plates/aluminum"
+      "tag": "c:aluminum_plates"
     },
     "G" : {
-      "tag" : "forge:gears/aluminum"
+      "tag" : "c:aluminum_gears"
     }
   },
   "result": {

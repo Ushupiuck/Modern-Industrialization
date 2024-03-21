@@ -13,7 +13,7 @@
     }
   ],
   "item_inputs": {
-    "tag": "forge:tiny_dusts/nickel",
+    "tag": "c:nickel_tiny_dusts",
     "amount": 4
   },
   "fluid_outputs": [

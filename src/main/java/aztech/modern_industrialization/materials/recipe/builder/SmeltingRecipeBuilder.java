@@ -23,27 +23,28 @@
  */
 package aztech.modern_industrialization.materials.recipe.builder;
 
-import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.materials.MaterialBuilder;
 import aztech.modern_industrialization.materials.part.PartKeyProvider;
-import net.minecraft.data.recipes.RecipeOutput;
-import net.minecraft.world.item.crafting.AbstractCookingRecipe;
-import net.minecraft.world.item.crafting.BlastingRecipe;
-import net.minecraft.world.item.crafting.CookingBookCategory;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.SmeltingRecipe;
-import org.jetbrains.annotations.Nullable;
+import aztech.modern_industrialization.recipe.json.SmeltingRecipeJson;
+import com.google.gson.Gson;
+import java.util.function.Consumer;
+import net.minecraft.data.recipes.FinishedRecipe;
 
 @SuppressWarnings({ "FieldCanBeLocal", "MismatchedQueryAndUpdateOfCollection", "UnusedDeclaration" })
 public class SmeltingRecipeBuilder implements MaterialRecipeBuilder {
+    private static final transient Gson GSON = new Gson();
+
     public final String recipeId;
     private final MaterialBuilder.RecipeContext context;
     private boolean canceled = false;
-    @Nullable
-    private final AbstractCookingRecipe smeltingRecipe;
+    private final SmeltingRecipeJson json;
+
+    public static class Ingredient {
+        String item;
+    }
 
     public static void smeltAndBlast(MaterialBuilder.RecipeContext context, PartKeyProvider inputPart, PartKeyProvider outputPart,
-            float experience) {
+            double experience) {
         if (context.hasInternalPart(inputPart) || context.hasInternalPart(outputPart)) {
             // Skip if both are external, vanilla already has the recipe
             new SmeltingRecipeBuilder(context, inputPart, outputPart, experience, false);
@@ -52,7 +53,7 @@ public class SmeltingRecipeBuilder implements MaterialRecipeBuilder {
     }
 
     public SmeltingRecipeBuilder(MaterialBuilder.RecipeContext context, PartKeyProvider inputPart, PartKeyProvider outputPart, int cookingtime,
-            float experience,
+            double experience,
             boolean blasting) {
         if (blasting) {
             this.recipeId = "smelting/" + inputPart.key() + "_to_" + outputPart.key() + "_blasting";
@@ -61,25 +62,17 @@ public class SmeltingRecipeBuilder implements MaterialRecipeBuilder {
         }
 
         this.context = context;
-        var input = context.getPart(inputPart);
-        var output = context.getPart(outputPart);
-        if (input == null || output == null) {
+        if (context.getPart(inputPart) == null || context.getPart(outputPart) == null) {
             canceled = true;
-            this.smeltingRecipe = null;
+            this.json = null;
         } else {
-            AbstractCookingRecipe.Factory<?> factory = blasting ? BlastingRecipe::new : SmeltingRecipe::new;
-            this.smeltingRecipe = factory.create(
-                    "",
-                    CookingBookCategory.MISC,
-                    Ingredient.of(input.asItem()),
-                    output.asItem().getDefaultInstance(),
-                    experience,
-                    cookingtime);
+            this.json = new SmeltingRecipeJson(SmeltingRecipeJson.SmeltingRecipeType.ofBlasting(blasting), context.getPart(inputPart).getItemId(),
+                    context.getPart(outputPart).getItemId(), cookingtime, experience);
             context.addRecipe(this);
         }
     }
 
-    public SmeltingRecipeBuilder(MaterialBuilder.RecipeContext context, PartKeyProvider partInput, PartKeyProvider partOutput, float experience,
+    public SmeltingRecipeBuilder(MaterialBuilder.RecipeContext context, PartKeyProvider partInput, PartKeyProvider partOutput, double experience,
             boolean blasting) {
         this(context, partInput, partOutput, blasting ? 100 : 200, experience, blasting);
     }
@@ -98,10 +91,10 @@ public class SmeltingRecipeBuilder implements MaterialRecipeBuilder {
         return canceled;
     }
 
-    public void save(RecipeOutput recipeOutput) {
+    public void save(Consumer<FinishedRecipe> consumer) {
         if (!canceled) {
             String fullId = "materials/" + context.getMaterialName() + "/" + recipeId;
-            recipeOutput.accept(MI.id(fullId), smeltingRecipe, null);
+            json.offerTo(consumer, fullId);
         }
     }
 }

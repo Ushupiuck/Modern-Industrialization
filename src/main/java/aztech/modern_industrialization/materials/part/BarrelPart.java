@@ -26,8 +26,6 @@ package aztech.modern_industrialization.materials.part;
 import static aztech.modern_industrialization.materials.property.MaterialProperty.MEAN_RGB;
 
 import aztech.modern_industrialization.MIBlock;
-import aztech.modern_industrialization.MICapabilities;
-import aztech.modern_industrialization.MIRegistries;
 import aztech.modern_industrialization.MITags;
 import aztech.modern_industrialization.blocks.storage.StorageBehaviour;
 import aztech.modern_industrialization.blocks.storage.barrel.BarrelBlock;
@@ -37,11 +35,14 @@ import aztech.modern_industrialization.datagen.tag.TagsToGenerate;
 import aztech.modern_industrialization.definition.BlockDefinition;
 import aztech.modern_industrialization.items.SortOrder;
 import aztech.modern_industrialization.proxy.CommonProxy;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.bridge.SlotItemHandler;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.item.ItemVariant;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.models.model.TexturedModel;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.jetbrains.annotations.Nullable;
 
@@ -76,29 +77,24 @@ public class BarrelPart implements PartKeyProvider {
                             MIBlock.BlockDefinitionParams.defaultStone()
                                     .withBlockConstructor(s -> new BarrelBlock(factory, barrelStorageBehaviour))
                                     .withBlockItemConstructor(BarrelItem::new)
-                                    .withModel((block, gen) -> {
-                                        String name = gen.name(block);
-                                        gen.simpleBlock(block,
-                                                gen.models().cubeColumn(name, gen.blockTexture(name + "_side"), gen.blockTexture(name + "_top")));
-                                    })
+                                    .withModel(TexturedModel.COLUMN)
                                     .withBlockEntityRendererItemModel()
                                     .noLootTable()
                                     .sortOrder(SortOrder.BARRELS.and(stackCapacity)));
 
-                    TagsToGenerate.generateTag(MITags.BARRELS, blockDefinition, "Barrels");
+                    TagsToGenerate.generateTag(MITags.BARRELS, blockDefinition.asItem(), "Barrels");
+                    BarrelBlock block = blockDefinition.asBlock();
+                    BarrelItem item = (BarrelItem) blockDefinition.asItem();
 
-                    MIRegistries.BLOCK_ENTITIES.register(itemPath, () -> {
-                        var ret = BlockEntityType.Builder.of(factory::newBlockEntity, blockDefinition.asBlock()).build(null);
-                        // noinspection unchecked,rawtypes
-                        bet.setValue((BlockEntityType) ret);
-                        return ret;
-                    });
+                    // noinspection unchecked,rawtypes
+                    bet.setValue((BlockEntityType) Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, itemId,
+                            FabricBlockEntityTypeBuilder.create(
+                                    block.factory::newBlockEntity, block).build(null)));
 
-                    MICapabilities.onEvent(event -> {
-                        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, bet.getValue(), (be, side) -> new SlotItemHandler(be));
-                    });
+                    ItemStorage.SIDED.registerSelf(bet.getValue());
 
-                    CommonProxy.INSTANCE.registerPartBarrelClient(bet::getValue, partContext.get(MEAN_RGB));
+                    CommonProxy.INSTANCE.registerPartBarrelClient(block, item, partContext.getMaterialName(), itemPath, bet.getValue(),
+                            partContext.get(MEAN_RGB));
                 });
         if (maybeOverriddenPath != null) {
             template = template.withCustomPath(maybeOverriddenPath);

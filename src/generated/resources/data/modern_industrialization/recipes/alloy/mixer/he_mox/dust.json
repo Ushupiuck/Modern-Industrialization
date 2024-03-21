@@ -5,11 +5,11 @@
   "item_inputs": [
     {
       "amount": 6,
-      "tag": "forge:dusts/uranium_238"
+      "tag": "c:uranium_238_dusts"
     },
     {
       "amount": 3,
-      "tag": "forge:dusts/plutonium"
+      "tag": "c:plutonium_dusts"
     }
   ],
   "item_outputs": [

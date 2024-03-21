@@ -5,7 +5,7 @@
   "item_inputs": [
     {
       "amount": 1,
-      "tag": "forge:ores/salt"
+      "tag": "c:salt_ores"
     }
   ],
   "item_outputs": [

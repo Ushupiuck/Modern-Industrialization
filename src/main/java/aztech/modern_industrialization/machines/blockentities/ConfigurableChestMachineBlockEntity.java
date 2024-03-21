@@ -63,7 +63,7 @@ public class ConfigurableChestMachineBlockEntity extends MachineBlockEntity impl
     }
 
     @Override
-    protected MachineModelClientData getMachineModelData() {
+    protected MachineModelClientData getModelData() {
         MachineModelClientData data = new MachineModelClientData(MachineCasings.STEEL_CRATE);
         orientation.writeModelData(data);
         return data;

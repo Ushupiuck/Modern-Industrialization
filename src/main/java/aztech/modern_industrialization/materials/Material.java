@@ -30,7 +30,7 @@ import aztech.modern_industrialization.materials.property.MaterialProperty;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
-import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.FinishedRecipe;
 
 /**
  * A read-only material. Build with {@link MaterialBuilder}.
@@ -40,10 +40,10 @@ public class Material {
     final Map<PartKey, MaterialItemPart> parts;
     private final Map<MaterialProperty<?>, Object> properties;
 
-    public final Consumer<RecipeOutput> registerRecipes;
+    public final Consumer<Consumer<FinishedRecipe>> registerRecipes;
 
     Material(String name, Map<MaterialProperty<?>, Object> properties, Map<PartKey, MaterialItemPart> parts,
-            Consumer<RecipeOutput> registerRecipes) {
+            Consumer<Consumer<FinishedRecipe>> registerRecipes) {
         this.name = name;
         this.properties = properties;
         this.parts = parts;

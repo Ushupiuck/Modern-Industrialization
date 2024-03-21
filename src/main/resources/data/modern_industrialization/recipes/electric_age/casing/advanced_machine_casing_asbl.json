@@ -7,7 +7,7 @@
   ],
   "key": {
     "A" : {
-      "tag" : "forge:plates/aluminum"
+      "tag" : "c:aluminum_plates"
     },
     "H" : {
       "item" : "modern_industrialization:basic_machine_hull"

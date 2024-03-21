@@ -28,14 +28,14 @@ import net.minecraft.nbt.CompoundTag;
 public interface IComponent {
     void writeNbt(CompoundTag tag);
 
-    void readNbt(CompoundTag tag, boolean isUpgradingMachine);
+    void readNbt(CompoundTag tag);
 
     default void writeClientNbt(CompoundTag tag) {
         writeNbt(tag);
     }
 
     default void readClientNbt(CompoundTag tag) {
-        readNbt(tag, false);
+        readNbt(tag);
     }
 
     interface ClientOnly extends IComponent {
@@ -44,7 +44,7 @@ public interface IComponent {
         }
 
         @Override
-        default void readNbt(CompoundTag tag, boolean isUpgradingMachine) {
+        default void readNbt(CompoundTag tag) {
         }
 
         @Override

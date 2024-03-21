@@ -25,36 +25,39 @@ package aztech.modern_industrialization.pipes.fluid;
 
 import static aztech.modern_industrialization.pipes.api.PipeEndpointType.*;
 
-import aztech.modern_industrialization.MI;
-import aztech.modern_industrialization.pipes.api.IPipeMenuProvider;
+import aztech.modern_industrialization.ModernIndustrialization;
 import aztech.modern_industrialization.pipes.api.PipeEndpointType;
 import aztech.modern_industrialization.pipes.api.PipeNetworkNode;
 import aztech.modern_industrialization.pipes.api.PipeNetworkType;
 import aztech.modern_industrialization.pipes.gui.IPipeScreenHandlerHelper;
 import aztech.modern_industrialization.pipes.impl.PipeBlockEntity;
 import aztech.modern_industrialization.pipes.impl.PipeNetworks;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.fluid.FluidVariant;
-import aztech.modern_industrialization.util.IOFluidHandler;
+import aztech.modern_industrialization.util.IoStorage;
 import aztech.modern_industrialization.util.NbtHelper;
+import com.google.common.base.MoreObjects;
 import java.util.*;
+import net.fabricmc.fabric.api.lookup.v1.block.BlockApiCache;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.templates.EmptyFluidHandler;
 import org.jetbrains.annotations.Nullable;
 
+// LBA
 public class FluidNetworkNode extends PipeNetworkNode {
     long amount = 0;
     private final List<FluidConnection> connections = new ArrayList<>();
@@ -69,31 +72,35 @@ public class FluidNetworkNode extends PipeNetworkNode {
         FluidNetwork network = (FluidNetwork) this.network;
 
         if (amount > network.nodeCapacity) {
-            MI.LOGGER.warn("Fluid amount > nodeCapacity, deleting some fluid!");
+            ModernIndustrialization.LOGGER.warn("Fluid amount > nodeCapacity, deleting some fluid!");
             amount = network.nodeCapacity;
         }
         if (amount > 0 && data.fluid.isBlank()) {
-            MI.LOGGER.warn("Amount > 0 but fluid is blank, deleting some fluid!");
+            ModernIndustrialization.LOGGER.warn("Amount > 0 but fluid is blank, deleting some fluid!");
             amount = 0;
         }
 
         for (FluidConnection connection : connections) {
-            var storage = getNeighborStorage(world, pos, connection);
+            Storage<FluidVariant> storage = getNeighborStorage(world, pos, connection);
             if (data.fluid.isBlank() && connection.canExtract()) {
                 // Try to set fluid, will return null if none could be found.
-                data.fluid = FluidVariant.of(storage.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE));
+                data.fluid = MoreObjects.firstNonNull(StorageUtil.findExtractableResource(storage, null), FluidVariant.blank());
             }
-            targets.add(new FluidTarget(connection.priority, new IOFluidHandler(storage, connection.canInsert(), connection.canExtract())));
+            targets.add(new FluidTarget(connection.priority, new IoStorage<>(storage, connection.canInsert(), connection.canExtract())));
         }
     }
 
-    private IFluidHandler getNeighborStorage(ServerLevel world, BlockPos pos, FluidConnection connection) {
+    private Storage<FluidVariant> getNeighborStorage(ServerLevel world, BlockPos pos, FluidConnection connection) {
         if (connection.cache == null) {
-            connection.cache = BlockCapabilityCache.create(Capabilities.FluidHandler.BLOCK, world, pos.relative(connection.direction),
-                    connection.direction.getOpposite());
+            connection.cache = BlockApiCache.create(FluidStorage.SIDED, world, pos.relative(connection.direction));
         }
-        var storage = connection.cache.getCapability();
-        return Objects.requireNonNullElse(storage, EmptyFluidHandler.INSTANCE);
+        Storage<FluidVariant> storage = connection.cache.find(connection.direction.getOpposite());
+        if (storage != null) {
+            if ((connection.canExtract() && storage.supportsExtraction()) || (connection.canInsert() && storage.supportsInsertion())) {
+                return storage;
+            }
+        }
+        return Storage.empty();
     }
 
     @Override
@@ -124,7 +131,8 @@ public class FluidNetworkNode extends PipeNetworkNode {
     }
 
     private boolean canConnect(Level world, BlockPos pos, Direction direction) {
-        return world.getCapability(Capabilities.FluidHandler.BLOCK, pos.relative(direction), direction.getOpposite()) != null;
+        BlockPos adjPos = pos.relative(direction);
+        return FluidStorage.SIDED.find(world, pos.relative(direction), direction.getOpposite()) != null;
     }
 
     @Override
@@ -175,7 +183,7 @@ public class FluidNetworkNode extends PipeNetworkNode {
         amount = tag.getLong("amount_ftl");
         for (Direction direction : Direction.values()) {
             if (tag.contains(direction.toString())) {
-                if (tag.getTagType(direction.toString()) == Tag.TAG_BYTE) {
+                if (tag.getTagType(direction.toString()) == NbtType.BYTE) {
                     // Old format (before fluid pipe priorities)
                     connections.add(new FluidConnection(direction, decodeConnectionType(tag.getByte(direction.toString())), 0));
                 } else {
@@ -196,7 +204,7 @@ public class FluidNetworkNode extends PipeNetworkNode {
     }
 
     @Override
-    public IPipeMenuProvider getConnectionGui(Direction guiDirection, IPipeScreenHandlerHelper helper) {
+    public ExtendedScreenHandlerFactory getConnectionGui(Direction guiDirection, IPipeScreenHandlerHelper helper) {
         for (FluidConnection connection : connections) {
             if (connection.direction == guiDirection) {
                 return connection.new ScreenHandlerFactory(helper, getType().getIdentifier());
@@ -209,7 +217,7 @@ public class FluidNetworkNode extends PipeNetworkNode {
         private final Direction direction;
         private PipeEndpointType type;
         private int priority;
-        private BlockCapabilityCache<IFluidHandler, @Nullable Direction> cache;
+        private BlockApiCache<Storage<FluidVariant>, Direction> cache;
 
         private FluidConnection(Direction direction, PipeEndpointType type, int priority) {
             this.direction = direction;
@@ -225,7 +233,7 @@ public class FluidNetworkNode extends PipeNetworkNode {
             return type == BLOCK_OUT || type == BLOCK_IN_OUT;
         }
 
-        private class ScreenHandlerFactory implements IPipeMenuProvider {
+        private class ScreenHandlerFactory implements ExtendedScreenHandlerFactory {
             private final FluidPipeInterface iface;
             private final ResourceLocation pipeType;
 
@@ -291,6 +299,11 @@ public class FluidNetworkNode extends PipeNetworkNode {
             }
 
             @Override
+            public void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
+                iface.toBuf(buf);
+            }
+
+            @Override
             public Component getDisplayName() {
                 return Component.translatable("item." + pipeType.getNamespace() + "." + pipeType.getPath());
             }
@@ -298,11 +311,6 @@ public class FluidNetworkNode extends PipeNetworkNode {
             @Override
             public @Nullable AbstractContainerMenu createMenu(int syncId, Inventory inv, Player player) {
                 return new FluidPipeScreenHandler(syncId, inv, iface);
-            }
-
-            @Override
-            public void writeAdditionalData(FriendlyByteBuf buf) {
-                iface.toBuf(buf);
             }
         }
     }

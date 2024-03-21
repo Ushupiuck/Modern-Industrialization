@@ -57,7 +57,7 @@ public class OverclockComponent implements IComponent {
     }
 
     @Override
-    public void readNbt(CompoundTag tag, boolean isUpgradingMachine) {
+    public void readNbt(CompoundTag tag) {
         for (Catalyst catalyst : catalysts) {
             var multiplierKey = String.format("overclock%.2f", catalyst.multiplier);
             if (tag.contains(multiplierKey) && !tickMap.containsKey(catalyst.multiplier)) {

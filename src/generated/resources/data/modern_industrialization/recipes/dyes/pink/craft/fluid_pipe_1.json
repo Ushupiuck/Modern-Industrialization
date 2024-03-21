@@ -1,9 +1,8 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "d": {
-      "tag": "forge:dyes/pink"
+      "tag": "c:pink_dyes"
     },
     "p": {
       "tag": "modern_industrialization:fluid_pipes"
@@ -13,6 +12,7 @@
     "pd"
   ],
   "result": {
+    "count": 1,
     "item": "modern_industrialization:pink_fluid_pipe"
   }
 }

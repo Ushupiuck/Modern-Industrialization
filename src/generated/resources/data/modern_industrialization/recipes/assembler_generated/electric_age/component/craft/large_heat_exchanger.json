@@ -17,7 +17,7 @@
     },
     {
       "amount": 4,
-      "tag": "forge:gears/invar"
+      "tag": "c:invar_gears"
     }
   ],
   "item_outputs": [

@@ -5,7 +5,7 @@
   "item_inputs": [
     {
       "amount": 9,
-      "tag": "forge:nuggets/battery_alloy"
+      "tag": "c:battery_alloy_nuggets"
     }
   ],
   "item_outputs": [

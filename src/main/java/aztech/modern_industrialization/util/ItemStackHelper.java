@@ -24,7 +24,8 @@
 package aztech.modern_industrialization.util;
 
 import aztech.modern_industrialization.inventory.ConfigurableItemStack;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public class ItemStackHelper {
@@ -42,13 +43,12 @@ public class ItemStackHelper {
     public static boolean consumeFuel(ConfigurableItemStack stack, boolean simulate) {
         if (stack.isResourceBlank())
             return false;
-        var itemStack = stack.toStack();
-        if (itemStack.hasCraftingRemainingItem()) {
-            var remainder = ItemVariant.of(itemStack.getCraftingRemainingItem());
-            if (stack.getAmount() == 1 && stack.isResourceAllowedByLock(remainder)) {
+        Item item = stack.getResource().getItem();
+        if (item.hasCraftingRemainingItem()) {
+            if (stack.getAmount() == 1 && stack.isResourceAllowedByLock(item.getCraftingRemainingItem())) {
                 if (!simulate) {
                     stack.setAmount(1);
-                    stack.setKey(remainder);
+                    stack.setKey(ItemVariant.of(item.getCraftingRemainingItem()));
                 }
                 return true;
             }

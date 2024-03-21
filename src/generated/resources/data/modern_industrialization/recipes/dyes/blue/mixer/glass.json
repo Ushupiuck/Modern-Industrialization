@@ -5,11 +5,11 @@
   "item_inputs": [
     {
       "amount": 1,
-      "tag": "forge:dyes/blue"
+      "tag": "c:blue_dyes"
     },
     {
       "amount": 8,
-      "tag": "forge:glass"
+      "tag": "c:glass_blocks"
     }
   ],
   "item_outputs": [

@@ -1,10 +1,13 @@
 {
   "type": "modern_industrialization:forge_hammer",
-  "ingredient": {
-    "tag": "forge:ores/copper"
+  "eu": 0,
+  "duration": 0,
+  "item_inputs": {
+    "tag": "c:copper_ores",
+    "amount": 1
   },
-  "result": {
+  "item_outputs": {
     "item": "minecraft:raw_copper",
-    "count": 5
+    "amount": 5
   }
 }

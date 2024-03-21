@@ -24,16 +24,13 @@
 package aztech.modern_industrialization.datagen.recipe;
 
 import aztech.modern_industrialization.MIIdentifier;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.RecipeProvider;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
 import net.minecraft.resources.ResourceLocation;
 
-public abstract class MIRecipesProvider extends RecipeProvider {
-    public MIRecipesProvider(PackOutput packOutput) {
-        super(packOutput, CompletableFuture.completedFuture(HolderLookup.Provider.create(Stream.of())));
+public abstract class MIRecipesProvider extends FabricRecipeProvider {
+    public MIRecipesProvider(FabricDataOutput packOutput) {
+        super(packOutput);
     }
 
     protected static ResourceLocation id(String path) {

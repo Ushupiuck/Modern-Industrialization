@@ -8,11 +8,11 @@
       "amount": 1
     },
     {
-      "tag" : "forge:dusts/antimony",
+      "tag" : "c:antimony_dusts",
       "amount": 1
     },
     {
-      "tag" : "forge:dusts/aluminum",
+      "tag" : "c:aluminum_dusts",
       "amount": 1
     }
   ],

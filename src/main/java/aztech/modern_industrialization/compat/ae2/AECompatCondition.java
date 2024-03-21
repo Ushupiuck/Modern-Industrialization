@@ -24,23 +24,27 @@
 package aztech.modern_industrialization.compat.ae2;
 
 import aztech.modern_industrialization.MIConfig;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import net.neoforged.neoforge.common.conditions.ICondition;
+import aztech.modern_industrialization.MIIdentifier;
+import com.google.gson.JsonObject;
+import net.fabricmc.fabric.api.resource.conditions.v1.ConditionJsonProvider;
+import net.fabricmc.fabric.api.resource.conditions.v1.ResourceConditions;
+import net.minecraft.resources.ResourceLocation;
 
-public class AECompatCondition implements ICondition {
-    private static final boolean LOAD_COMPAT = MIConfig.loadAe2Compat();
+public class AECompatCondition {
+    private static final ResourceLocation ID = new MIIdentifier("ae_compat_loaded");
+    public static final ConditionJsonProvider PROVIDER = new ConditionJsonProvider() {
+        @Override
+        public ResourceLocation getConditionId() {
+            return ID;
+        }
 
-    public static final AECompatCondition INSTANCE = new AECompatCondition();
-    public static final Codec<AECompatCondition> CODEC = MapCodec.unit(INSTANCE).stable().codec();
+        @Override
+        public void writeParameters(JsonObject object) {
+        }
+    };
 
-    @Override
-    public boolean test(IContext context) {
-        return LOAD_COMPAT;
-    }
-
-    @Override
-    public Codec<? extends ICondition> codec() {
-        return CODEC;
+    public static void init() {
+        boolean loadCompat = MIConfig.loadAe2Compat();
+        ResourceConditions.register(ID, obj -> loadCompat);
     }
 }

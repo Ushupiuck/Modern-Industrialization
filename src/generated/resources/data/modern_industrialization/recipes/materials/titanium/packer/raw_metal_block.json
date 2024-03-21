@@ -5,7 +5,7 @@
   "item_inputs": [
     {
       "amount": 9,
-      "tag": "forge:raw_materials/titanium"
+      "tag": "c:raw_titanium_ores"
     }
   ],
   "item_outputs": [

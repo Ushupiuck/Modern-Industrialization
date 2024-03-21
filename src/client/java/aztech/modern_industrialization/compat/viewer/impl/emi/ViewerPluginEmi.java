@@ -24,12 +24,10 @@
 package aztech.modern_industrialization.compat.viewer.impl.emi;
 
 import aztech.modern_industrialization.compat.viewer.usage.ViewerSetup;
-import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.stack.EmiStack;
 
-@EmiEntrypoint
 public class ViewerPluginEmi implements EmiPlugin {
     @Override
     public void register(EmiRegistry registry) {

@@ -26,6 +26,7 @@ package aztech.modern_industrialization.pipes.api;
 import aztech.modern_industrialization.pipes.gui.IPipeScreenHandlerHelper;
 import aztech.modern_industrialization.pipes.impl.PipeBlockEntity;
 import java.util.List;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -58,7 +59,7 @@ public abstract class PipeNetworkNode {
      * Get the connection screen handler factory, or null if there is not gui for
      * this connection.
      */
-    public IPipeMenuProvider getConnectionGui(Direction direction, IPipeScreenHandlerHelper helper) {
+    public ExtendedScreenHandlerFactory getConnectionGui(Direction direction, IPipeScreenHandlerHelper helper) {
         return null;
     }
 

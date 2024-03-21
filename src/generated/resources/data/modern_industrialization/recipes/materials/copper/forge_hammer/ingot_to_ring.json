@@ -1,9 +1,15 @@
 {
   "type": "modern_industrialization:forge_hammer",
-  "ingredient": {
-    "tag": "forge:ingots/copper"
-  },
-  "result": {
-    "item": "modern_industrialization:copper_ring"
-  }
+  "item_inputs": [
+    {
+      "amount": 1,
+      "tag": "c:copper_ingots"
+    }
+  ],
+  "item_outputs": [
+    {
+      "amount": 1,
+      "item": "modern_industrialization:copper_ring"
+    }
+  ]
 }

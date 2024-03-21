@@ -62,7 +62,7 @@ public class SteamCraftingMachineBlockEntity extends AbstractCraftingMachineBloc
     }
 
     @Override
-    protected MachineModelClientData getMachineModelData() {
+    protected MachineModelClientData getModelData() {
         MachineModelClientData data = new MachineModelClientData();
         orientation.writeModelData(data);
         data.isActive = isActiveComponent.isActive;

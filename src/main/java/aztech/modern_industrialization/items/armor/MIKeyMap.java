@@ -34,7 +34,7 @@ public class MIKeyMap {
         return HOLDING_UP.getOrDefault(player, false);
     }
 
-    public static void update(Player player, boolean up) {
+    static void update(Player player, boolean up) {
         HOLDING_UP.put(player, up);
     }
 

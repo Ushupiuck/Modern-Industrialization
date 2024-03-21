@@ -25,10 +25,8 @@ package aztech.modern_industrialization.blocks.storage;
 
 import aztech.modern_industrialization.MIText;
 import aztech.modern_industrialization.items.ContainerItem;
-import aztech.modern_industrialization.proxy.CommonProxy;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.storage.TransferVariant;
 import java.util.List;
-import java.util.function.Consumer;
+import net.fabricmc.fabric.api.transfer.v1.storage.TransferVariant;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -55,10 +53,4 @@ public abstract class AbstractStorageBlockItem<T extends TransferVariant<?>> ext
         return behaviour;
     }
 
-    // A bit stupid but I don't want to have client-only code in the main sourceset
-    @Override
-    @SuppressWarnings("rawtype")
-    public void initializeClient(Consumer stupidClientProperties) {
-        CommonProxy.INSTANCE.withStandardItemRenderer(stupidClientProperties);
-    }
 }

@@ -37,9 +37,7 @@ public class BatteryPart implements PartKeyProvider {
         return new PartTemplate("Battery", "battery").withRegister(
                 (partContext, part, itemPath, itemId, itemTag, englishName) -> {
                     var item = PartTemplate.createSimpleItem(englishName, itemPath, partContext, part);
-                    item.withItemRegistrationEvent(i -> {
-                        PortableStorageUnit.CAPACITY_PER_BATTERY.put(i, batteryCapacity);
-                    });
+                    PortableStorageUnit.CAPACITY_PER_BATTERY.put(item, batteryCapacity);
                 });
     }
 

@@ -23,20 +23,12 @@
  */
 package aztech.modern_industrialization.api.machine.component;
 
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.fluid.FluidVariant;
-import com.google.common.primitives.Ints;
-import net.neoforged.neoforge.fluids.FluidStack;
-import org.jetbrains.annotations.ApiStatus;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 
 public interface FluidAccess {
-    @ApiStatus.Internal // Don't rely on these types existing forever!
     FluidVariant getVariant();
 
     long getAmount();
 
     long getCapacity();
-
-    default FluidStack toStack() {
-        return getVariant().toStack(Ints.saturatedCast(getAmount()));
-    }
 }

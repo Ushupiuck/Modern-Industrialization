@@ -1,11 +1,16 @@
 {
   "type": "modern_industrialization:forge_hammer",
-  "damage": 50,
-  "ingredient": {
-    "tag": "forge:ores/gold"
-  },
-  "result": {
-    "count": 4,
-    "item": "modern_industrialization:gold_dust"
-  }
+  "hammer_damage": 25,
+  "item_inputs": [
+    {
+      "amount": 1,
+      "tag": "c:gold_ores"
+    }
+  ],
+  "item_outputs": [
+    {
+      "amount": 4,
+      "item": "modern_industrialization:gold_dust"
+    }
+  ]
 }

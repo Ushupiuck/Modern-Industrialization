@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shapeless",
-  "category": "misc",
   "ingredients": [
     {
       "item": "minecraft:exposed_cut_copper_stairs"
@@ -10,6 +9,7 @@
     }
   ],
   "result": {
+    "count": 1,
     "item": "minecraft:waxed_exposed_cut_copper_stairs"
   }
 }

@@ -24,7 +24,7 @@
 package aztech.modern_industrialization.machines.init;
 
 import aztech.modern_industrialization.MIBlock;
-import aztech.modern_industrialization.MIRegistries;
+import aztech.modern_industrialization.MIIdentifier;
 import aztech.modern_industrialization.api.energy.CableTier;
 import aztech.modern_industrialization.datagen.model.MachineModelsToGenerate;
 import aztech.modern_industrialization.definition.BlockDefinition;
@@ -38,8 +38,12 @@ import aztech.modern_industrialization.util.MobSpawning;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.models.BlockModelGenerators;
+import net.minecraft.data.models.model.ModelLocationUtils;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -53,7 +57,7 @@ public class MachineRegistrationHelper {
      * @param extraRegistrators A list of BET consumer used for API registration.
      */
     @SafeVarargs
-    public static Supplier<BlockEntityType<?>> registerMachine(String englishName, String id,
+    public static BlockEntityType<?> registerMachine(String englishName, String id,
             Function<BEP, MachineBlockEntity> factory,
             Consumer<BlockEntityType<?>>... extraRegistrators) {
         BlockEntityType<?>[] bet = new BlockEntityType[1];
@@ -66,21 +70,24 @@ public class MachineRegistrationHelper {
                         .sortOrder(SortOrder.MACHINES)
                         .withBlockConstructor((s) -> new MachineBlock(ctor, s))
                         .withModel((block, gen) -> {
-                            // Model generation is handled in the model provider already.
+                            // Item model is in code
+                            gen.skipAutoItemBlock(block);
+                            // Add a single block state definition mapping to the item model (which is a code model that we provide).
+                            gen.blockStateOutput.accept(
+                                    BlockModelGenerators.createSimpleBlock(block, ModelLocationUtils.getModelLocation(block.asItem())));
                         })
-                        .isValidSpawn(MobSpawning.NO_SPAWN));
+                        .isValidSpawn(MobSpawning.NO_SPAWN),
+                MachineBlock.class);
 
-        return MIRegistries.BLOCK_ENTITIES.register(id, () -> {
-            Block block = blockDefinition.asBlock();
+        Block block = blockDefinition.asBlock();
 
-            bet[0] = BlockEntityType.Builder.of(ctor::apply, block).build(null);
+        bet[0] = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, new MIIdentifier(id),
+                FabricBlockEntityTypeBuilder.create(ctor::apply, block).build(null));
+        for (Consumer<BlockEntityType<?>> extraRegistrator : extraRegistrators) {
+            extraRegistrator.accept(bet[0]);
+        }
 
-            for (Consumer<BlockEntityType<?>> extraRegistrator : extraRegistrators) {
-                extraRegistrator.accept(bet[0]);
-            }
-
-            return bet[0];
-        });
+        return bet[0];
     }
 
     @SuppressWarnings("IfCanBeSwitch")
@@ -105,7 +112,8 @@ public class MachineRegistrationHelper {
 
     public static void addMachineModel(String id, String overlayFolder, MachineCasing defaultCasing, boolean frontOverlay, boolean topOverlay,
             boolean sideOverlay, boolean hasActive) {
-        MachineModelsToGenerate.register(id, defaultCasing, overlayFolder, frontOverlay, topOverlay, sideOverlay, hasActive);
+        MachineBlock.REGISTERED_MACHINES.put(id, defaultCasing);
+        MachineModelsToGenerate.register(id, overlayFolder, frontOverlay, topOverlay, sideOverlay, hasActive);
     }
 
     public static void addModelsForTiers(String name, boolean frontOverlay, boolean topOverlay, boolean sideOverlay, String... tiers) {

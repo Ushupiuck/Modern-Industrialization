@@ -23,7 +23,6 @@
  */
 package aztech.modern_industrialization.machines.blockentities.hatches;
 
-import aztech.modern_industrialization.MICapabilities;
 import aztech.modern_industrialization.api.energy.CableTier;
 import aztech.modern_industrialization.api.energy.EnergyApi;
 import aztech.modern_industrialization.api.energy.MIEnergyStorage;
@@ -96,19 +95,17 @@ public class EnergyHatch extends HatchBlockEntity implements EnergyComponentHold
     }
 
     public static void registerEnergyApi(BlockEntityType<?> bet) {
-        MICapabilities.onEvent(event -> {
-            event.registerBlockEntity(EnergyApi.SIDED, bet, (be, direction) -> {
-                EnergyHatch eh = (EnergyHatch) be;
-                if (eh.input) {
-                    return eh.insertable;
+        EnergyApi.SIDED.registerForBlockEntities((be, direction) -> {
+            EnergyHatch eh = (EnergyHatch) be;
+            if (eh.input) {
+                return eh.insertable;
+            } else {
+                if (eh.orientation.outputDirection == direction) {
+                    return eh.extractable;
                 } else {
-                    if (eh.orientation.outputDirection == direction) {
-                        return eh.extractable;
-                    } else {
-                        return null;
-                    }
+                    return null;
                 }
-            });
-        });
+            }
+        }, bet);
     }
 }

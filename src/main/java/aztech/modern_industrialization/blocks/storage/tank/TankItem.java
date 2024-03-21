@@ -24,10 +24,12 @@
 package aztech.modern_industrialization.blocks.storage.tank;
 
 import aztech.modern_industrialization.blocks.storage.AbstractStorageBlockItem;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.fluid.FluidVariant;
 import aztech.modern_industrialization.util.FluidHelper;
 import aztech.modern_industrialization.util.NbtHelper;
 import java.util.List;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -36,8 +38,14 @@ import net.minecraft.world.level.Level;
 
 public class TankItem extends AbstractStorageBlockItem<FluidVariant> {
 
-    public TankItem(TankBlock block, Properties settings) {
+    public TankItem(TankBlock block, FabricItemSettings settings) {
         super(block, settings);
+
+    }
+
+    public void registerItemApi() {
+        FluidStorage.ITEM.registerForItems(
+                (stack, context) -> new GenericItemStorage<>(this, context), this);
     }
 
     @Override

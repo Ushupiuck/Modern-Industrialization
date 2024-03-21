@@ -121,7 +121,7 @@ public class SteamBoilerMultiblockBlockEntity extends MultiblockMachineBlockEnti
     }
 
     @Override
-    protected MachineModelClientData getMachineModelData() {
+    protected MachineModelClientData getModelData() {
         return new MachineModelClientData(null, orientation.facingDirection).active(isActiveComponent.isActive);
     }
 

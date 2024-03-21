@@ -26,11 +26,12 @@ package aztech.modern_industrialization.datagen.recipe;
 import aztech.modern_industrialization.MIFluids;
 import aztech.modern_industrialization.MIItem;
 import aztech.modern_industrialization.machines.init.MIMachineRecipeTypes;
-import aztech.modern_industrialization.machines.recipe.MachineRecipeBuilder;
-import aztech.modern_industrialization.recipe.json.ShapelessRecipeBuilder;
+import aztech.modern_industrialization.recipe.json.MIRecipeJson;
+import aztech.modern_industrialization.recipe.json.ShapelessRecipeJson;
+import java.util.function.Consumer;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 
@@ -38,12 +39,12 @@ import net.minecraft.world.item.Items;
  * Datagen for recipes that produce vanilla materials using MI machines.
  */
 public class VanillaCompatRecipesProvider extends MIRecipesProvider {
-    public VanillaCompatRecipesProvider(PackOutput packOutput) {
+    public VanillaCompatRecipesProvider(FabricDataOutput packOutput) {
         super(packOutput);
     }
 
     @Override
-    public void buildRecipes(RecipeOutput exporter) {
+    public void buildRecipes(Consumer<FinishedRecipe> exporter) {
         generateCopperOxidation(exporter, Items.COPPER_BLOCK, Items.EXPOSED_COPPER, Items.WEATHERED_COPPER, Items.OXIDIZED_COPPER);
         generateCopperOxidation(exporter, Items.CUT_COPPER, Items.EXPOSED_CUT_COPPER, Items.WEATHERED_CUT_COPPER, Items.OXIDIZED_CUT_COPPER);
         generateCopperOxidation(exporter, Items.CUT_COPPER_SLAB, Items.EXPOSED_CUT_COPPER_SLAB, Items.WEATHERED_CUT_COPPER_SLAB,
@@ -79,34 +80,32 @@ public class VanillaCompatRecipesProvider extends MIRecipesProvider {
         generateWax(exporter, Items.OXIDIZED_CUT_COPPER_STAIRS, Items.WAXED_OXIDIZED_CUT_COPPER_STAIRS);
 
         // misc recipes
-        new MachineRecipeBuilder(MIMachineRecipeTypes.MACERATOR, 2, 100)
+        MIRecipeJson.create(MIMachineRecipeTypes.MACERATOR, 2, 100)
                 .addItemInput(Items.STONE, 1)
                 .addItemOutput(Items.COBBLESTONE, 1)
                 .offerTo(exporter, "vanilla_recipes/macerator/stone_to_cobblestone");
     }
 
-    private void generateCopperOxidation(RecipeOutput exporter, Item unaffected, Item exposed, Item weathered, Item oxidized) {
+    private void generateCopperOxidation(Consumer<FinishedRecipe> exporter, Item unaffected, Item exposed, Item weathered, Item oxidized) {
         oxidize(exporter, unaffected, exposed);
         oxidize(exporter, exposed, weathered);
         oxidize(exporter, weathered, oxidized);
     }
 
-    private void oxidize(RecipeOutput exporter, Item from, Item to) {
-        new MachineRecipeBuilder(MIMachineRecipeTypes.CHEMICAL_REACTOR, 8, 100)
+    private void oxidize(Consumer<FinishedRecipe> exporter, Item from, Item to) {
+        MIRecipeJson.create(MIMachineRecipeTypes.CHEMICAL_REACTOR, 8, 100)
                 .addItemInput(from, 1)
                 .addFluidInput(MIFluids.OXYGEN, 100)
                 .addItemOutput(to, 1)
                 .offerTo(exporter, "vanilla_recipes/oxidation/" + BuiltInRegistries.ITEM.getKey(from).getPath());
     }
 
-    private void generateWax(RecipeOutput exporter, Item from, Item to) {
-        var recipe = ShapelessRecipeBuilder.shapeless(to).requires(from).requires(MIItem.WAX);
+    private void generateWax(Consumer<FinishedRecipe> exporter, Item from, Item to) {
+        ShapelessRecipeJson recipe = new ShapelessRecipeJson(to).addIngredient(from).addIngredient(MIItem.WAX);
         recipe.offerTo(exporter, "vanilla_recipes/waxing/" + BuiltInRegistries.ITEM.getKey(from).getPath());
 
-        MachineRecipeBuilder chemicalReactorRecipe = new MachineRecipeBuilder(MIMachineRecipeTypes.CHEMICAL_REACTOR, 8, 100)
-                .addItemInput(from, 1)
-                .addItemInput(MIItem.WAX, 1)
-                .addItemOutput(to, 1);
+        MIRecipeJson<?> chemicalReactorRecipe = recipe.exportToMachine(
+                MIMachineRecipeTypes.CHEMICAL_REACTOR, 8, 100);
 
         chemicalReactorRecipe.offerTo(exporter, "vanilla_recipes/chemical_reactor/waxing/" + BuiltInRegistries.ITEM.getKey(from).getPath());
     }

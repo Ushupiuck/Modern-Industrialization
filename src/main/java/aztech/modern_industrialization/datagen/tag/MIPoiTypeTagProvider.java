@@ -23,24 +23,22 @@
  */
 package aztech.modern_industrialization.datagen.tag;
 
-import aztech.modern_industrialization.MI;
-import aztech.modern_industrialization.MIRegistries;
+import aztech.modern_industrialization.MIVillager;
 import java.util.concurrent.CompletableFuture;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.data.PackOutput;
-import net.minecraft.data.tags.PoiTypeTagsProvider;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.PoiTypeTags;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
 
-public class MIPoiTypeTagProvider extends PoiTypeTagsProvider {
-    public MIPoiTypeTagProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider,
-            @Nullable ExistingFileHelper existingFileHelper) {
-        super(output, lookupProvider, MI.ID, existingFileHelper);
+public class MIPoiTypeTagProvider extends FabricTagProvider<PoiType> {
+    public MIPoiTypeTagProvider(FabricDataOutput packOutput, CompletableFuture<HolderLookup.Provider> registriesFuture) {
+        super(packOutput, Registries.POINT_OF_INTEREST_TYPE, registriesFuture);
     }
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        tag(PoiTypeTags.ACQUIRABLE_JOB_SITE).add(MIRegistries.INDUSTRIALIST_POI.getKey());
+        tag(PoiTypeTags.ACQUIRABLE_JOB_SITE).add(MIVillager.POI_KEY);
     }
 }

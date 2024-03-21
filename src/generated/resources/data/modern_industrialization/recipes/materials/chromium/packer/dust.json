@@ -5,7 +5,7 @@
   "item_inputs": [
     {
       "amount": 9,
-      "tag": "forge:tiny_dusts/chromium"
+      "tag": "c:chromium_tiny_dusts"
     }
   ],
   "item_outputs": [

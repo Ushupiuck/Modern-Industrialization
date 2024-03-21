@@ -23,7 +23,7 @@
  */
 package aztech.modern_industrialization.items.armor;
 
-import dev.technici4n.grandpower.api.ISimpleEnergyItem;
+import io.github.ladysnake.pal.VanillaAbilities;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
@@ -35,8 +35,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
+import team.reborn.energy.api.base.SimpleEnergyItem;
 
-public class GraviChestPlateItem extends ArmorItem implements ActivatableChestItem, ISimpleEnergyItem {
+public class GraviChestPlateItem extends ArmorItem implements ActivatableChestItem, SimpleEnergyItem {
     public GraviChestPlateItem(Properties settings) {
         super(buildMaterial(), Type.CHESTPLATE, settings.stacksTo(1).rarity(Rarity.EPIC));
     }
@@ -106,7 +107,7 @@ public class GraviChestPlateItem extends ArmorItem implements ActivatableChestIt
         if (level.isClientSide())
             return;
         if (entity instanceof Player player && stack == player.getItemBySlot(EquipmentSlot.CHEST)) {
-            if (player.getAbilities().flying) {
+            if (MIArmorEffects.SRC.grants(player, VanillaAbilities.ALLOW_FLYING) && player.getAbilities().flying) {
                 setEnergy(stack, Math.max(0, getEnergy(stack) - FLIGHT_COST));
             }
         }

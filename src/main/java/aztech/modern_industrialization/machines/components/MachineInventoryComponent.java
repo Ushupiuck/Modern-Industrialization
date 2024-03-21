@@ -104,8 +104,8 @@ public class MachineInventoryComponent implements CrafterComponent.Inventory, IC
     }
 
     @Override
-    public void readNbt(CompoundTag tag, boolean isUpgradingMachine) {
-        this.inventory.readNbt(tag, isUpgradingMachine);
+    public void readNbt(CompoundTag tag) {
+        this.inventory.readNbt(tag);
         this.inventory.addListener(listener, null);
     }
 }
